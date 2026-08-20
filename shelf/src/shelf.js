@@ -18,7 +18,7 @@ import {
   supportsDirectoryBackup, pickBackupDirectory, hasWriteAccess, writeBackup, downloadJson,
 } from './backup.js';
 import {
-  dayKey, dayHeading, clockTime, relativeTime, fullTimestamp,
+  dayKey, dayHeading, clockTime, relativeTime, relativePhrase, fullTimestamp,
   domainInitial, collapseWhitespace,
 } from './util.js';
 
@@ -573,6 +573,19 @@ async function restoreFromFile(file) {
   render();
 }
 
+/**
+ * How to name the backup target.
+ *
+ * A directory handle's `name` is the folder. If a FILE handle ever ends up stored here
+ * the message would name a file and read as though Shelf were writing into it, so the
+ * kind is checked rather than assumed — the footer is the only place a user would ever
+ * notice the backup target is wrong.
+ */
+function where(handle) {
+  if (!handle?.name) return 'the chosen folder';
+  return handle.kind === 'directory' ? `the "${handle.name}" folder` : `"${handle.name}"`;
+}
+
 async function renderBackupStatus() {
   const handle = await db.getMeta('backupDir');
   const last = (await db.getMeta('lastBackupAt')) ?? 0;
@@ -587,9 +600,9 @@ async function renderBackupStatus() {
     status.textContent = !live
       ? `Backup folder "${handle.name}" needs reconnecting — click Back up now.`
       : last
-        ? `Backed up to "${handle.name}" ${relativeTime(last, Date.now())} ago — `
+        ? `Backed up ${relativePhrase(last, Date.now())} to ${where(handle)} — `
           + `${BACKUP_FILENAME} to restore, ${BACKUP_HTML_FILENAME} to read.`
-        : `Backup folder "${handle.name}" is set. Nothing written yet.`;
+        : `Backup folder ${where(handle)} is set. Nothing written yet.`;
   } else if (!supportsDirectoryBackup()) {
     status.textContent = 'This browser cannot write to a folder. Download JSON regularly instead.';
   } else {

@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import {
   NORMALIZE_VERSION, normalizeUrl, urlHash, domainOf, domainInitial,
   collapseWhitespace, escapeHtml,
-  dayKey, dayHeading, clockTime, relativeTime, fullTimestamp,
+  dayKey, dayHeading, clockTime, relativeTime, relativePhrase, fullTimestamp,
 } from '../shelf/src/util.js';
 
 /* ------------------------------------------------------------------ *
@@ -228,4 +228,25 @@ test('relativeTime never shows a future age', () => {
 
 test('fullTimestamp answers "when did I read this"', () => {
   assert.equal(fullTimestamp(AUG20), 'Thursday, 20 August 2026 at 9:12 AM:34');
+});
+
+test('relativePhrase reads correctly at every rung of the ladder', () => {
+  // relativeTime returns three different shapes and only one of them takes " ago".
+  // Appending it unconditionally gave "just now ago" and "19 Aug ago" in the backup
+  // footer — grammatically wrong in two cases out of three, and invisible to any test
+  // that only checked relativeTime itself.
+  const now = new Date(2026, 7, 20, 9, 12, 34).getTime();
+  assert.equal(relativePhrase(now, now), 'just now');
+  assert.equal(relativePhrase(now - 30_000, now), 'just now');
+  assert.equal(relativePhrase(now - 5 * 60_000, now), '5m ago');
+  assert.equal(relativePhrase(now - 2 * 3600_000, now), '2h ago');
+  assert.equal(relativePhrase(now - 26 * 3600_000, now), 'on 19 Aug');
+});
+
+test('relativePhrase never produces a double time-word', () => {
+  const now = new Date(2026, 7, 20, 12, 0).getTime();
+  for (const offset of [0, 1e3, 6e4, 36e5, 9e7, 4e10]) {
+    const phrase = relativePhrase(now - offset, now);
+    assert.doesNotMatch(phrase, /now ago|Aug ago|Jan ago/, `bad phrase: "${phrase}"`);
+  }
 });

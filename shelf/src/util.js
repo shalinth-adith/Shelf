@@ -283,6 +283,23 @@ export function relativeTime(ts, now) {
   return sameYear ? short : short + ' ' + d.getFullYear();
 }
 
+/**
+ * relativeTime as a phrase that can sit in a sentence.
+ *
+ * relativeTime returns three different shapes — "just now", "2h", "19 Aug" — and only
+ * the middle one takes " ago". Appending it unconditionally produces "just now ago" and
+ * "19 Aug ago", which is how the backup footer read until someone looked at it.
+ *
+ * @param {number} ts epoch ms
+ * @param {number} now epoch ms
+ * @returns {string} e.g. "just now", "2h ago", "on 19 Aug"
+ */
+export function relativePhrase(ts, now) {
+  const rel = relativeTime(ts, now);
+  if (rel === 'just now') return rel;
+  return /^\d+[mh]$/.test(rel) ? rel + ' ago' : 'on ' + rel;
+}
+
 /** Full timestamp for the title attribute — the always-answerable form. */
 export function fullTimestamp(ts) {
   const d = new Date(ts);
