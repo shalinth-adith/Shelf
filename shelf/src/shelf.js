@@ -548,6 +548,12 @@ function updateScope() {
       ? `${list.length} passages from ${tally.length} sites: ${shown}${rest}.`
       : 'Nothing to export.';
   }
+  // The label names the act at the moment of the act. "Export" reads the same whether
+  // you are publishing two chosen passages or your entire reading history; "Export
+  // everything" cannot be clicked without reading what it does. PRD §8.4 calls this a
+  // safety mechanism, and a safety mechanism that reads identically in the safe and
+  // unsafe case is not one.
+  $('dlg-go').textContent = scope === 'all' ? 'Export everything' : 'Export marked';
   $('dlg-go').disabled = list.length === 0;
 }
 
