@@ -232,7 +232,51 @@ async function openShelf() {
 chrome.commands.onCommand.addListener((command) => {
   log('command', command);
   if (command === 'open-shelf') openShelf();
+  if (command === 'save-page') savePageByShortcut();
 });
+
+/**
+ * Save the current page from the keyboard. Completes TRD §9.1's degradation table.
+ *
+ * §9 warns that chrome.commands other than _execute_action do NOT grant activeTab, so
+ * this cannot request permission on its own and cannot read an unpermitted page. That is
+ * the one row in the table marked with a badge: not granted -> shortcut fails visibly
+ * with `!`, and the user falls back to right-click, which always works.
+ */
+async function savePageByShortcut() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const origins = originPatternFor(tab?.url);
+
+  if (!origins || !(await chrome.permissions.contains({ origins }))) {
+    // §9.1's badge. Silence here would read as the shortcut being broken.
+    log('save-page: no access to', tab?.url);
+    flashBadge('!', '#8A5A1F');
+    return;
+  }
+
+  let text = '';
+  try {
+    const [result] = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: () => {
+        const clean = (s) => String(s || '').replace(/\s+/g, ' ').trim();
+        for (const sel of ['meta[property="og:description"]',
+                           'meta[name="twitter:description"]',
+                           'meta[name="description"]']) {
+          const v = clean(document.querySelector(sel)?.content);
+          if (v) return v;
+        }
+        const article = clean(document.querySelector('article')?.innerText);
+        return article.length > 200 ? article.slice(0, 600) : '';
+      },
+    });
+    text = result?.result ?? '';
+  } catch (err) {
+    log('excerpt unavailable', err?.message);
+  }
+
+  await saveClip({ source: 'shortcut', text, url: tab.url, title: tab.title ?? '' });
+}
 
 /* ================================================================== *
  * Lifecycle
@@ -253,6 +297,12 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   if (existing === undefined) {
     await db.setMeta('installedAt', Date.now());
     log('installedAt stamped');
+  }
+
+  // First run only. PRD §9 — four screens whose job is expectation-setting, because both
+  // of the things most likely to cause angry churn are expectation failures.
+  if (details.reason === 'install') {
+    chrome.tabs.create({ url: chrome.runtime.getURL('src/welcome.html') });
   }
 });
 
@@ -275,6 +325,21 @@ chrome.runtime.onStartup.addListener(() => {
  * ================================================================== */
 
 const SCRIPT_ID = 'shelf-bar';
+
+/**
+ * Match pattern for a URL's origin, or null if the page is one extensions cannot touch.
+ * @param {string|undefined} url
+ * @returns {string[]|null}
+ */
+function originPatternFor(url) {
+  try {
+    const u = new URL(String(url));
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+    return [u.origin + '/*'];
+  } catch {
+    return null;
+  }
+}
 
 async function syncContentScripts() {
   try {
@@ -329,60 +394,6 @@ async function injectIntoOpenTabs(matches) {
       log('inject skipped for tab', tab.id, String(err && err.message));
     }
   }));
-}
-
-/**
- * Toolbar click → request access to the current site.
- *
- * TEMPORARY. Step 9's popup owns this properly, with per-site state and the count of
- * clips from this page. It exists now because TRD §18 has an ordering gap: step 5 builds
- * the save bar, the bar needs a granted origin, and nothing before step 9 can grant one.
- * chrome.permissions.request() requires a user gesture, and a devtools console is not
- * one — so the gesture has to come from extension UI. A toolbar click is the smallest
- * piece of UI that qualifies.
- *
- * Only fires while the action has no default_popup. Adding one at step 9 disables this
- * listener automatically, which is the intended handover.
- */
-chrome.action.onClicked.addListener((tab) => {
-  const origins = originPatternFor(tab && tab.url);
-  if (!origins) {
-    // chrome://, about:, the Web Store, PDFs — pages no extension may ever touch.
-    // Nothing to grant here, so make the click do the other useful thing.
-    log('no grantable origin for', tab && tab.url, '— opening shelf');
-    openShelf();
-    return;
-  }
-
-  // NO await before request(). User activation expires across an await, and the call
-  // then rejects with "must be called during a user gesture" — a genuinely confusing
-  // failure, because the code looks correct. Already-granted origins resolve true
-  // immediately without prompting, so checking first buys nothing anyway.
-  chrome.permissions.request({ origins })
-    .then((granted) => {
-      log('permission request for', origins[0], granted ? 'granted' : 'denied');
-      flashBadge(granted ? '✓' : '✕', granted ? '#A8462A' : '#8A5A1F');
-      // permissions.onAdded does the registration and open-tab injection.
-    })
-    .catch((err) => {
-      console.error('[shelf:sw] permission request failed', err);
-      flashBadge('!', '#8A5A1F');
-    });
-});
-
-/**
- * Match pattern for a URL's origin, or null if the page is one extensions cannot access.
- * @param {string|undefined} url
- * @returns {string[]|null}
- */
-function originPatternFor(url) {
-  try {
-    const u = new URL(String(url));
-    if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
-    return [u.origin + '/*'];
-  } catch {
-    return null;
-  }
 }
 
 chrome.permissions.onAdded.addListener((p) => {

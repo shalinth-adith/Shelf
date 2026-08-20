@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Welcome to Shelf</title>
+  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="welcome.css">
+</head>
+<body>
+<main>
+  <nav class="dots" id="dots" aria-label="Progress"></nav>
+
+  <!-- 1 ------------------------------------------------------------ -->
+  <section data-screen="1">
+    <p class="eyebrow">Shelf</p>
+    <h1>Keep the sentence, not the tab.</h1>
+    <p>
+      Select text on any page and save it. The passage is kept with its source and the
+      moment you took it, and you can find it again years later.
+    </p>
+
+    <figure class="demo">
+      <blockquote>A collection is not a hoard; it is an argument about what deserves to persist.</blockquote>
+      <figcaption><span class="avatar">a</span> aeon.co · today, 9:12&nbsp;AM</figcaption>
+    </figure>
+
+    <div class="row"><button class="primary" data-next>Next</button></div>
+  </section>
+
+  <!-- 2 ------------------------------------------------------------ -->
+  <!-- PRD §9: "screen 2 is not skippable without either configuring a backup or
+       explicitly dismissing a 'you have no backup' warning." -->
+  <section data-screen="2" hidden>
+    <p class="eyebrow">Where your data lives</p>
+    <h1>This machine. Nowhere else.</h1>
+    <p>
+      No account, no server, no sync. Shelf makes no network requests of any kind — not
+      for fonts, not for icons, not for analytics. Nothing you save leaves this browser.
+    </p>
+    <p class="hard">
+      Which also means: <b>lose this machine without a backup and the clips go with it.</b>
+    </p>
+    <p>
+      Point Shelf at a folder and it keeps a copy there — a readable one and a restorable
+      one. Choose a folder inside Dropbox or iCloud and you get sync between machines for
+      free.
+    </p>
+
+    <div class="row">
+      <button class="primary" id="pick">Choose a backup folder</button>
+      <button class="ghost" id="skip-backup">Not now</button>
+    </div>
+    <p class="status" id="backup-status"></p>
+
+    <!-- The explicit dismissal. Only route past this screen without a folder. -->
+    <div class="confirm" id="confirm" hidden>
+      <p><b>Continue with no backup?</b>
+      If this browser profile is lost or reset, every clip goes with it and cannot be
+      recovered by anyone, including us.</p>
+      <label><input type="checkbox" id="accept"> I understand there is no backup</label>
+      <button class="ghost" id="confirm-next" disabled>Continue anyway</button>
+    </div>
+  </section>
+
+  <!-- 3 ------------------------------------------------------------ -->
+  <section data-screen="3" hidden>
+    <p class="eyebrow">Site access</p>
+    <h1>Right-click always works.</h1>
+    <p>
+      Select text on any page, right-click, <b>Save selection to Shelf</b>. That path works
+      everywhere, on every site, with no permission at all.
+    </p>
+    <p>
+      The floating save bar needs permission per site. Shelf never asks for access to all
+      sites, and never at install — you grant one site at a time from the toolbar button.
+    </p>
+
+    <table class="grid">
+      <tr><th></th><th>Right-click</th><th>Save bar</th></tr>
+      <tr><td>Any site</td><td class="yes">Yes</td><td class="no">—</td></tr>
+      <tr><td>Sites you allow</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+    </table>
+
+    <div class="row"><button class="primary" data-next>Next</button></div>
+  </section>
+
+  <!-- 4 ------------------------------------------------------------ -->
+  <section data-screen="4" hidden>
+    <p class="eyebrow">Ready</p>
+    <h1>That's everything.</h1>
+
+    <dl class="keys">
+      <dt><kbd id="k-shelf">⌘⇧L</kbd></dt><dd>Open the shelf</dd>
+      <dt><kbd id="k-save">⌘⇧S</kbd></dt><dd>Save the current page</dd>
+      <dt><kbd>/</kbd></dt><dd>Search, once the shelf is open</dd>
+    </dl>
+
+    <p class="status" id="first-clip"></p>
+
+    <div class="row"><button class="primary" id="done">Open my shelf</button></div>
+  </section>
+</main>
+<script type="module" src="welcome.js"></script>
+</body>
+</html>

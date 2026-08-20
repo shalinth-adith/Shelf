@@ -12,7 +12,8 @@
   },
 
   "action": {
-    "default_title": "Shelf — click to allow on this site",
+    "default_title": "Shelf",
+    "default_popup": "src/popup.html",
     "default_icon": {
       "16": "icons/16.png",
       "32": "icons/32.png",
@@ -43,6 +44,10 @@
     "open-shelf": {
       "suggested_key": { "default": "Ctrl+Shift+L", "mac": "Command+Shift+L" },
       "description": "Open the shelf"
+    },
+    "save-page": {
+      "suggested_key": { "default": "Ctrl+Shift+S", "mac": "Command+Shift+S" },
+      "description": "Save the current page"
     }
   },
 

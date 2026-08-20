@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <title>Shelf</title>
+  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+<div class="top">
+  <span class="wordmark">Shelf</span>
+  <span class="spacer"></span>
+  <span class="count" id="total"></span>
+</div>
+
+<!-- Storage pressure. D2 kept this state from the canvas but changed its remedy:
+     there are no thumbnails to clear, so the answer is to get a copy out. -->
+<div class="strip warn" id="storage" hidden>
+  <span id="storage-text"></span>
+  <div class="bar"><i id="storage-fill"></i></div>
+</div>
+
+<div class="body">
+
+  <!-- Pages no extension may touch. -->
+  <section id="s-restricted" hidden>
+    <p class="warn-line">Can't read this page</p>
+    <p class="lead">Browser settings pages are off limits to extensions.</p>
+    <p class="sub">Nothing to save here. Open the shelf to read what you already have.</p>
+  </section>
+
+  <!-- The mitigation PRD §12 names for its highest-severity product risk. -->
+  <section id="s-grant" hidden>
+    <p class="lead">Shelf can't see this page yet</p>
+    <p class="sub">
+      Right-click → <b>Save selection to Shelf</b> works everywhere, always.
+      Allow this site and the save bar appears when you select text.
+    </p>
+    <button class="primary" id="grant">Allow Shelf on <span id="grant-host"></span></button>
+    <p class="sub tiny">Per site. Never all sites, never at install.</p>
+  </section>
+
+  <!-- The ordinary case. -->
+  <section id="s-page" hidden>
+    <div class="site"><span class="avatar" id="avatar"></span><span id="domain"></span></div>
+    <p class="lead" id="title"></p>
+    <p class="sub" id="already" hidden></p>
+
+    <textarea id="note" rows="3" placeholder="Add a note (optional)"></textarea>
+
+    <div class="row">
+      <button class="primary" id="save">Save page</button>
+      <button class="ghost" id="open">Open shelf</button>
+    </div>
+    <p class="sub tiny" id="hint">Saved to this browser only</p>
+  </section>
+
+  <!-- After a save. -->
+  <section id="s-saved" hidden>
+    <p class="ok"><span class="tick">✓</span> <span id="saved-text">Saved</span></p>
+    <p class="lead" id="saved-title"></p>
+    <p class="sub" id="saved-meta"></p>
+    <div class="row">
+      <button class="ghost" id="saved-note">Add a note</button>
+      <button class="ghost" id="saved-open">Open shelf</button>
+    </div>
+  </section>
+
+</div>
+<script type="module" src="popup.js"></script>
+</body>
+</html>

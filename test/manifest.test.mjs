@@ -230,3 +230,44 @@ test('extension pages load only local scripts and styles', () => {
       `${file} contains inline script`);
   }
 });
+
+test('the popup replaces the temporary grant handler, not sits beside it', () => {
+  // action.onClicked never fires while a default_popup exists. Leaving that listener in
+  // would be dead code that reads as live, and the next person to touch permissions
+  // would reasonably believe two paths grant access.
+  const bg = code(join(EXT, 'src', 'background.js'));
+  if (manifest.action?.default_popup) {
+    assert.doesNotMatch(bg, /chrome\.action\.onClicked/,
+      'default_popup is set, so action.onClicked is dead — remove it');
+  }
+});
+
+test('every command has a handler', () => {
+  // A declared command with no listener is a shortcut that silently does nothing.
+  const bg = code(join(EXT, 'src', 'background.js'));
+  for (const name of Object.keys(manifest.commands ?? {})) {
+    assert.ok(bg.includes(`'${name}'`), `command "${name}" declared but never handled`);
+  }
+});
+
+test('onboarding and popup are reachable and complete', () => {
+  for (const page of ['src/popup.html', 'src/welcome.html']) {
+    const html = readFileSync(join(EXT, page), 'utf8');
+    for (const [, ref] of html.matchAll(/(?:src|href)="([^"]+)"/g)) {
+      assert.doesNotThrow(() => statSync(join(EXT, 'src', ref)), `${page} references missing ${ref}`);
+    }
+  }
+});
+
+test('onboarding cannot be skipped past the backup screen by a single click', () => {
+  // PRD §9: screen 2 "is not skippable without either configuring a backup or explicitly
+  // dismissing a you-have-no-backup warning". The dismissal must cost more than the
+  // agreement, or it is not a warning.
+  const js = code(join(EXT, 'src', 'welcome.js'));
+  assert.match(js, /revealConfirm/, 'the skip button must reveal a confirmation');
+  assert.doesNotMatch(js, /skip-backup'\)\.addEventListener\('click', \(\) => go\(/,
+    'the skip button must not advance directly');
+  const html = readFileSync(join(EXT, 'src', 'welcome.html'), 'utf8');
+  assert.match(html, /id="confirm-next"[^>]*disabled/, 'continue must start disabled');
+  assert.match(html, /id="accept"/, 'an explicit acknowledgement is required');
+});
