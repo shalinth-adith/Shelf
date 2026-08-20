@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import {
   NORMALIZE_VERSION, normalizeUrl, urlHash, domainOf, domainInitial,
   collapseWhitespace, escapeHtml,
-  dayKey, dayHeading, clockTime, relativeTime, relativePhrase, fullTimestamp,
+  dayKey, dayHeading, clockTime, relativeTime, relativePhrase, fullTimestamp, toMarkdown,
 } from '../shelf/src/util.js';
 
 /* ------------------------------------------------------------------ *
@@ -249,4 +249,59 @@ test('relativePhrase never produces a double time-word', () => {
     const phrase = relativePhrase(now - offset, now);
     assert.doesNotMatch(phrase, /now ago|Aug ago|Jan ago/, `bad phrase: "${phrase}"`);
   }
+});
+
+/* ------------------------------------------------------------------ *
+ * toMarkdown — PRD U13
+ * ------------------------------------------------------------------ */
+
+const mdClip = (over = {}) => ({
+  text: 'A collection is not a hoard.',
+  title: 'What we owe',
+  url: 'https://aeon.co/essays/x',
+  domain: 'aeon.co',
+  note: '',
+  savedAt: new Date(2026, 7, 20, 9, 12).getTime(),
+  ...over,
+});
+
+test('a passage becomes a blockquote with a citation', () => {
+  const md = toMarkdown(mdClip());
+  assert.match(md, /^> A collection is not a hoard\.$/m);
+  assert.match(md, /— \[What we owe\]\(https:\/\/aeon\.co\/essays\/x\), 20 August 2026/);
+});
+
+test('a page-save is not quoted', () => {
+  // Quoting a title the user never selected would misrepresent what was saved.
+  const md = toMarkdown(mdClip({ text: '' }));
+  assert.doesNotMatch(md, /^>/m);
+  assert.match(md, /^— \[What we owe\]/m);
+});
+
+test('a multi-line passage stays inside one blockquote', () => {
+  // Without prefixing every line, the quote breaks out halfway and the rest of the
+  // passage renders as body text.
+  const md = toMarkdown(mdClip({ text: 'first line\nsecond line' }));
+  assert.match(md, /^> first line$/m);
+  assert.match(md, /^> second line$/m);
+});
+
+test('brackets in a title cannot break the link', () => {
+  const md = toMarkdown(mdClip({ title: 'Notes [draft] (v2)' }));
+  assert.match(md, /\[Notes \\\[draft\\\] \(v2\)\]/);
+  assert.match(md, /\]\(https:\/\/aeon\.co/, 'the url must still be the link target');
+});
+
+test('a note is appended in italics', () => {
+  assert.match(toMarkdown(mdClip({ note: 'why it mattered' })), /\*why it mattered\*/);
+});
+
+test('toMarkdown never emits undefined for a sparse clip', () => {
+  const md = toMarkdown({ text: 'x', savedAt: 0 });
+  assert.doesNotMatch(md, /undefined|null|NaN/);
+});
+
+test('toMarkdown falls back to the domain when there is no title', () => {
+  const md = toMarkdown(mdClip({ title: '' }));
+  assert.match(md, /\[aeon\.co\]/);
 });

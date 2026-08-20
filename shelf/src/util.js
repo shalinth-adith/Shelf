@@ -231,6 +231,51 @@ export function escapeHtml(s) {
     .replace(/'/g, '&#39;');
 }
 
+/**
+ * A clip as Markdown, with its citation. PRD U13.
+ *
+ * Shaped for pasting into notes, an essay draft, or a commit message — which means the
+ * passage has to come first and the citation has to be one line under it. A YAML block
+ * or a table would be tidier and would not survive contact with any of those places.
+ *
+ * Blockquote for a passage, plain text for a page-save: quoting a title you did not
+ * select would misrepresent what was saved.
+ *
+ * @param {object} clip
+ * @returns {string}
+ */
+export function toMarkdown(clip) {
+  const lines = [];
+  // Horizontal whitespace collapsed, line breaks kept. Clips saved by Shelf are already
+  // fully collapsed by buildClip, so this only matters for a restored backup — and
+  // parseBackupJson accepts any well-formed JSON, including hand-edited files. Flattening
+  // here would be harmless; NOT prefixing every line would leave half the passage
+  // rendering as body text outside the quote.
+  const text = String(clip?.text ?? '').replace(/[^\S\n]+/g, ' ')
+    .split('\n').map((l) => l.trim()).join('\n').trim();
+  const title = collapseWhitespace(clip?.title ?? '');
+  const note = collapseWhitespace(clip?.note ?? '');
+  const url = String(clip?.url ?? '').trim();
+  const domain = clip?.domain || domainOf(url);
+
+  if (text) {
+    // Every line prefixed, so a multi-line passage stays one quote rather than breaking
+    // out of it halfway.
+    lines.push(text.split('\n').map((l) => '> ' + l).join('\n'), '');
+  }
+
+  // Escape the link text, or a title containing ] or ) silently breaks the link.
+  const label = title || domain || url;
+  const safeLabel = label.replace(/([\[\]])/g, '\\$1');
+  const cite = url ? `— [${safeLabel}](${url})` : `— ${safeLabel}`;
+  const when = Number.isFinite(clip?.savedAt) ? dayHeading(clip.savedAt).date : '';
+  lines.push(when ? `${cite}, ${when}` : cite);
+
+  if (note) lines.push('', `*${note}*`);
+
+  return lines.join('\n').trim() + '\n';
+}
+
 /* ================================================================== *
  * Time — PRD §8.2
  *

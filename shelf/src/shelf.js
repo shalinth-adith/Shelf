@@ -20,7 +20,7 @@ import {
 } from './backup.js';
 import {
   dayKey, dayHeading, clockTime, relativeTime, relativePhrase, fullTimestamp,
-  domainInitial, collapseWhitespace,
+  domainInitial, collapseWhitespace, toMarkdown,
 } from './util.js';
 
 const log = (...a) => console.debug('[shelf:page]', ...a);
@@ -225,10 +225,15 @@ function renderClip(clip, terms, now) {
   share.title = 'Include this clip when exporting a web page';
   share.addEventListener('click', () => toggleShare(clip));
 
+  const copy = el('button', null, 'Copy');
+  copy.type = 'button';
+  copy.title = 'Copy the passage and its citation as Markdown';
+  copy.addEventListener('click', () => copyMarkdown(clip, copy));
+
   const del = el('button', null, 'Remove');
   del.type = 'button';
   del.addEventListener('click', () => removeClips([clip.id]));
-  actions.append(noteBtn, share, del);
+  actions.append(noteBtn, copy, share, del);
   body.append(actions);
 
   row.append(body);
@@ -401,6 +406,26 @@ async function toggleShare(clip) {
   await db.putClip(clip);
   log('share', clip.id, clip.isPublic);
   render();
+}
+
+/**
+ * Copy a clip as Markdown. PRD U13.
+ *
+ * Confirms in the button itself rather than the undo toast — a copy is not undoable and
+ * borrowing that toast would teach the wrong thing about what it means.
+ */
+async function copyMarkdown(clip, button) {
+  const label = button.textContent;
+  try {
+    await navigator.clipboard.writeText(toMarkdown(clip));
+    button.textContent = 'Copied';
+  } catch (err) {
+    // Clipboard access can be refused; saying so beats a button that appears to do
+    // nothing.
+    console.error('[shelf:page] copy failed', err);
+    button.textContent = 'Copy failed';
+  }
+  setTimeout(() => { button.textContent = label; }, 1400);
 }
 
 /* ================================================================== *
