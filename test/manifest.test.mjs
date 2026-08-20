@@ -93,6 +93,49 @@ test('no source file references a remote origin', () => {
   }
 });
 
+/** Every shipped file that can pull a resource: JS, CSS, HTML. */
+function assetFiles(dir = EXT) {
+  return readdirSync(dir).flatMap((name) => {
+    const p = join(dir, name);
+    if (statSync(p).isDirectory()) return assetFiles(p);
+    return ['.js', '.css', '.html'].includes(extname(p)) ? [p] : [];
+  });
+}
+
+test('no shipped CSS or HTML references a remote origin', () => {
+  // The JS-only check above would have missed the whole font question: a stylesheet can
+  // pull a webfont, an image, or an @import from anywhere, and none of it looks like a
+  // network call in code review.
+  for (const file of assetFiles()) {
+    const hits = [...readFileSync(file, 'utf8').matchAll(/https?:\/\/[^\s'"`)]+/g)]
+      .map((m) => m[0])
+      .filter((u) => !u.startsWith('https://fonts.googleapis.com/css2?')); // prose in comments
+    assert.deepEqual(hits, [], `remote origin in ${file}`);
+  }
+});
+
+test('every local url() in shipped CSS resolves on disk', () => {
+  for (const file of assetFiles().filter((f) => extname(f) === '.css')) {
+    const dir = file.slice(0, file.lastIndexOf('/'));
+    for (const [, ref] of readFileSync(file, 'utf8').matchAll(/url\(['"]?([^'")]+)['"]?\)/g)) {
+      if (ref.startsWith('data:')) continue;
+      assert.doesNotThrow(() => statSync(join(dir, ref)), `${file} references missing ${ref}`);
+    }
+  }
+});
+
+test('bundled fonts are real woff2 and carry their licence', () => {
+  // OFL 1.1 permits redistribution but requires the licence travel with the files.
+  // Shipping the binaries without it is the kind of omission that surfaces at store
+  // review, after the submission queue.
+  const fonts = readdirSync(join(EXT, 'fonts'));
+  assert.ok(fonts.includes('OFL.txt'), 'fonts/OFL.txt missing');
+  for (const f of fonts.filter((n) => n.endsWith('.woff2'))) {
+    const head = readFileSync(join(EXT, 'fonts', f)).subarray(0, 4).toString('latin1');
+    assert.equal(head, 'wOF2', `${f} is not a woff2`);
+  }
+});
+
 test('every path the manifest names exists on disk', () => {
   const paths = new Set([
     ...Object.values(manifest.icons ?? {}),
