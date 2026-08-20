@@ -225,16 +225,36 @@
     host.style.visibility = 'hidden';
     host.style.transform = 'translate(0px, 0px)';
 
-    const rect = range.getBoundingClientRect();
     const size = bar.getBoundingClientRect();
 
-    // Above the selection by preference; below when there is no room, which is the
-    // common case for a selection in the first line of the viewport.
-    let top = rect.top - size.height - GAP;
-    if (top < GAP) top = Math.min(rect.bottom + GAP, window.innerHeight - size.height - GAP);
+    // Anchor to the LAST line of the selection, not the whole bounding box. On a
+    // multi-line selection the last line is where the pointer was released and is
+    // usually the shortest, so the bar lands near the cursor rather than floating in
+    // the middle of the paragraph.
+    const rects = range.getClientRects();
+    const full = range.getBoundingClientRect();
+    const anchor = rects.length ? rects[rects.length - 1] : full;
 
-    // Centred, then clamped so an edge-of-viewport selection never pushes it off-screen.
-    let left = rect.left + rect.width / 2 - size.width / 2;
+    /**
+     * BELOW the selection by default.
+     *
+     * The obvious choice is above, and it is wrong. Medium, Substack, Notion and most
+     * reading platforms put their own selection toolbar above the text, centred — so
+     * "above" collides on exactly the sites this product is for, and at
+     * z-index 2147483647 we always win, covering their controls. That is the hijacking
+     * PRD principle 5 rules out.
+     *
+     * Below inverts the failure: we collide only on the rare site that puts its toolbar
+     * underneath. Flip up only when there is genuinely no room.
+     */
+    let top = anchor.bottom + GAP;
+    if (top + size.height > window.innerHeight - GAP) {
+      top = Math.max(GAP, full.top - size.height - GAP);
+    }
+
+    // Centred on the anchor line, then clamped so an edge-of-viewport selection never
+    // pushes the bar off-screen.
+    let left = anchor.left + anchor.width / 2 - size.width / 2;
     left = Math.max(GAP, Math.min(left, window.innerWidth - size.width - GAP));
 
     host.style.transform = 'translate(' + Math.round(left) + 'px,' + Math.round(top) + 'px)';

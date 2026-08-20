@@ -22,8 +22,8 @@ that was supposed to catch it being wrong.
 | 3 | `util.js` | ✅ 19 tests, 41 URL pairs |
 | — | Safari quota probe | ⤵ deferred to step 10 (see note) |
 | 4 | `background.js` | ✅ context menu saved on non-granted youtube.com |
-| 5 | `content.js` | ⏳ awaiting acceptance check |
-| 6 | `shelf.js` | — |
+| 5 | `content.js` | ✅ bar renders and saves on medium.com |
+| 6 | `shelf.js` | ▶ next |
 | 7 | `export.js` | — |
 | 8 | Backup | — |
 | 9 | Popup + onboarding | — |
