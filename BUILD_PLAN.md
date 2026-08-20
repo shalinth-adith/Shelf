@@ -20,8 +20,8 @@ that was supposed to catch it being wrong.
 | 1 | Manifest, icons, empty worker | ✅ loads unpacked, worker boots |
 | 2 | `db.js` | ✅ record round-tripped in worker console |
 | 3 | `util.js` | ✅ 19 tests, 41 URL pairs |
-| — | Safari quota probe | ⏳ next — needs Safari + Xcode |
-| 4 | `background.js` | — |
+| — | Safari quota probe | ⤵ deferred to step 10 (see note) |
+| 4 | `background.js` | ⏳ awaiting acceptance check |
 | 5 | `content.js` | — |
 | 6 | `shelf.js` | — |
 | 7 | `export.js` | — |
@@ -101,6 +101,12 @@ Insert 500 realistic clips, log `navigator.storage.estimate()`, find where write
 in the same pass, since step 8 depends on it. (TRD §17)
 
 **Check:** ceiling measured and written down before more is built on it.
+
+**Deferred to step 10** (2026-08-20, user direction: finish Chrome first). Two reasons
+it is safe to move: it needs the Safari + Xcode toolchain that step 10 sets up anyway,
+and D2 removed the risk it was sized for. The probe assumed thumbnails; with letter
+avatars at ~500 bytes per clip, 5,000 clips is 2.5MB — far from any plausible ceiling.
+Still run before Safari submission, not skipped.
 
 ---
 

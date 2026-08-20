@@ -195,6 +195,31 @@ export async function getClip(id) {
   return clip;
 }
 
+/**
+ * Total number of clips.
+ * @returns {Promise<number>}
+ */
+export async function countClips() {
+  const n = await withDb(CLIPS, 'readonly', (tx) => request(tx.objectStore(CLIPS).count()));
+  log('countClips', n);
+  return n;
+}
+
+/**
+ * How many clips share a canonical page. Answers "3 saves from this page" in the popup.
+ * Counts through the urlHash index rather than scanning, so it stays O(log n).
+ *
+ * @param {string} hash
+ * @returns {Promise<number>}
+ */
+export async function countByUrlHash(hash) {
+  if (!hash) return 0;
+  const n = await withDb(CLIPS, 'readonly', (tx) =>
+    request(tx.objectStore(CLIPS).index('urlHash').count(IDBKeyRange.only(hash))));
+  log('countByUrlHash', hash.slice(0, 8), n);
+  return n;
+}
+
 /* ------------------------------------------------------------------ *
  * meta
  * ------------------------------------------------------------------ */
