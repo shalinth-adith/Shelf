@@ -1,16 +1,13 @@
-Shelf bundles two typefaces, both under the SIL Open Font License v1.1.
+Shelf bundles one typeface, under the SIL Open Font License v1.1.
 
-Copyright 2011 The Lora Project Authors (https://github.com/cyrealtype/Lora-Cyrillic), with Reserved Font Name "Lora".
-
-Copyright 2019 The Karla Project Authors (https://github.com/googlefonts/karla)
+Copyright 2015 The Public Sans Project Authors (https://github.com/uswds/public-sans)
 
 Files:
-  lora-latin.woff2, lora-latin-ext.woff2               Lora, roman  (variable 400-700)
-  lora-italic-latin.woff2, lora-italic-latin-ext.woff2 Lora, italic (variable 400-700)
-  karla-latin.woff2, karla-latin-ext.woff2             Karla        (variable 200-800)
+  public-sans-latin.woff2, public-sans-latin-ext.woff2               roman  (variable 400-800)
+  public-sans-italic-latin.woff2, public-sans-italic-latin-ext.woff2 italic (variable 400-600)
 
-Subset to latin and latin-ext. Glyphs outside those ranges fall back to the system
-serif/sans via the unicode-range declarations in fonts.css — nothing is fetched.
+Subset to latin and latin-ext. Glyphs outside those ranges fall back to the system sans
+via the unicode-range declarations in fonts.css — nothing is fetched.
 
 --------------------------------------------------------------------------------
 

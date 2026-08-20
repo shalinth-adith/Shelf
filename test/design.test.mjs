@@ -28,6 +28,17 @@ function tokens(scope) {
   );
 }
 
+const EXT = 'shelf';
+
+/** Every shipped file that can name a typeface. */
+function assetFiles(dir = EXT) {
+  return readdirSync(dir).flatMap((n) => {
+    const p = join(dir, n);
+    if (statSync(p).isDirectory()) return assetFiles(p);
+    return ['.js', '.css', '.html'].includes(extname(p)) ? [p] : [];
+  });
+}
+
 function sourceFiles(dir = 'shelf/src') {
   return readdirSync(dir).flatMap((n) => {
     const p = join(dir, n);
@@ -69,4 +80,52 @@ test('no colour from a previous palette lingers in the source', () => {
     }
   }
   assert.deepEqual([...stale], [], 'colours not traceable to the design canvas');
+});
+
+/* ---------------------------------------------------------------- typography */
+
+/** The families the canvas actually uses, from its --sans/--serif tokens. */
+function canvasFamilies() {
+  const css = readFileSync(CANVAS, 'utf8');
+  return [...css.matchAll(/--(sans|serif)\s*:\s*([^;]+);/g)]
+    .map(([, role, value]) => [role, value.trim()]);
+}
+
+test('the canvas declares a sans and no serif', () => {
+  // The revised canvas dropped the serif entirely. If one ever returns, this fails and
+  // the shipped CSS gets updated deliberately rather than drifting apart from the design.
+  const roles = Object.fromEntries(canvasFamilies());
+  assert.ok(roles.sans, 'canvas must define --sans');
+  assert.equal(roles.serif, undefined, 'canvas defines a --serif again; ship one too');
+});
+
+test('no shipped file references a retired typeface', () => {
+  // Lora and Karla were removed with the font change. A leftover reference does not
+  // error — it silently falls back to Georgia or system-ui, so one surface renders in a
+  // different face and nobody notices until a screenshot.
+  const RETIRED = /\bLora\b|\bKarla\b|var\(--serif\)/;
+  for (const file of assetFiles()) {
+    assert.doesNotMatch(readFileSync(file, 'utf8'), RETIRED, `retired typeface in ${file}`);
+  }
+});
+
+test('every bundled font file is referenced, and every reference exists', () => {
+  // Catches both halves: a font removed from CSS but left in the bundle (dead weight in
+  // a store submission) and a font referenced but not shipped (a silent fallback).
+  const dir = join(EXT, 'fonts');
+  const css = readFileSync(join(dir, 'fonts.css'), 'utf8');
+  const referenced = new Set([...css.matchAll(/url\('([^']+)'\)/g)].map((m) => m[1]));
+  const present = new Set(readdirSync(dir).filter((f) => f.endsWith('.woff2')));
+
+  assert.deepEqual([...referenced].filter((f) => !present.has(f)), [], 'referenced but missing');
+  assert.deepEqual([...present].filter((f) => !referenced.has(f)), [], 'shipped but unreferenced');
+});
+
+test('the shipped font family matches the canvas', () => {
+  const roles = Object.fromEntries(canvasFamilies());
+  const family = roles.sans.match(/'([^']+)'|^([\w ]+)/)?.[1] ?? '';
+  const theme = readFileSync(join(EXT, 'src', 'theme.css'), 'utf8');
+  assert.ok(theme.includes(family), `theme.css should use ${family}`);
+  const fontsCss = readFileSync(join(EXT, 'fonts', 'fonts.css'), 'utf8');
+  assert.ok(fontsCss.includes(family), `fonts.css should bundle ${family}`);
 });

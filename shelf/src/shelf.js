@@ -30,8 +30,6 @@ const UNDO_MS = 8000;
 const state = {
   clips: [],
   query: '',
-  from: '',
-  to: '',
   sort: 'newest',
   selected: new Set(),
 };
@@ -65,19 +63,10 @@ function filtered() {
       const hay = haystack(clip);
       if (!terms.every((t) => hay.includes(t))) return false;
     }
-    if (state.from || state.to) {
-      const day = dayKey(clip.savedAt);
-      if (state.from && day < state.from) return false;
-      if (state.to && day > state.to) return false;
-    }
     return true;
   });
 
-  if (state.sort === 'title') {
-    // Sort on what the row actually leads with, not always the title — otherwise the
-    // list appears unsorted to anyone reading it. See leadText().
-    out.sort((a, b) => leadText(a).localeCompare(leadText(b)));
-  } else if (state.sort === 'oldest') {
+  if (state.sort === 'oldest') {
     out.sort((a, b) => a.savedAt - b.savedAt);
   } else {
     out.sort((a, b) => b.savedAt - a.savedAt);
@@ -297,16 +286,13 @@ function render() {
   const groups = $('groups');
   groups.replaceChildren();
 
-  // Sorting by title abandons chronology, so day grouping would be meaningless.
+  // Always chronological now. The canvas dropped title sort, and with it the one case
+  // that abandoned day grouping.
   const buckets = new Map();
-  if (state.sort === 'title') {
-    buckets.set('all', list);
-  } else {
-    for (const clip of list) {
-      const key = dayKey(clip.savedAt);
-      if (!buckets.has(key)) buckets.set(key, []);
-      buckets.get(key).push(clip);
-    }
+  for (const clip of list) {
+    const key = dayKey(clip.savedAt);
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key).push(clip);
   }
 
   const frag = document.createDocumentFragment();
@@ -314,12 +300,8 @@ function render() {
     const section = el('section', 'group');
     const col = el('div', 'daycol');
 
-    if (key === 'all') {
-      col.append(el('div', 'weekday', 'All saves'), el('div', 'date', 'by title'));
-    } else {
-      const { weekday, date } = dayHeading(clips[0].savedAt);
-      col.append(el('div', 'weekday', weekday), el('div', 'date', date));
-    }
+    const { weekday, date } = dayHeading(clips[0].savedAt);
+    col.append(el('div', 'weekday', weekday), el('div', 'date', date));
     col.append(el('div', 'daycount', `${clips.length} ${clips.length === 1 ? 'save' : 'saves'}`));
 
     const items = el('div', 'items');
@@ -337,12 +319,12 @@ function render() {
     ? 'Nothing saved yet'
     : `${shown} ${shown === 1 ? 'save' : 'saves'} · ${sites} ${sites === 1 ? 'site' : 'sites'} · kept in this browser`;
 
-  const filtering = Boolean(state.query || state.from || state.to);
+  const filtering = Boolean(state.query);
   $('empty').hidden = shown !== 0;
   if (shown === 0) {
     $('empty-title').textContent = filtering ? 'Nothing matches' : 'Nothing here yet';
     $('empty-body').textContent = filtering
-      ? 'Clear the search or widen the dates.'
+      ? 'Nothing matches that search. Clear it to see everything.'
       : 'Select text on any page and save it. It will appear here.';
   }
 
@@ -661,9 +643,6 @@ async function toggleTheme() {
 
 function bind() {
   $('q').addEventListener('input', (e) => { state.query = e.target.value; render(); });
-  $('from').addEventListener('change', (e) => { state.from = e.target.value; render(); });
-  $('to').addEventListener('change', (e) => { state.to = e.target.value; render(); });
-
   for (const btn of document.querySelectorAll('.sort button')) {
     btn.addEventListener('click', () => {
       state.sort = btn.dataset.sort;

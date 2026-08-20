@@ -21,8 +21,10 @@
   --accent-soft: #F6EAE4;
   --warn:      #8A5A1F;
 
-  --serif: Lora, Georgia, 'Times New Roman', serif;
-  --sans:  Karla, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* One family. The revised canvas dropped the serif entirely — there is no --serif
+     token any more, deliberately, so a stray reference fails visibly rather than
+     silently falling back to Times. */
+  --sans: 'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 [data-theme="dark"] {

@@ -177,6 +177,54 @@ synced folder stays quiet.
 
 Also downloadable directly from the shelf footer, for browsers with no directory access.
 
+### Amendment — 2026-08-20 — Public Sans only, and three controls removed
+
+Canvas revised again, against a screenshot of the running shelf. Four changes.
+
+**D1 superseded: the typeface is Public Sans, and there is no serif.**
+Lora and Karla are gone; all 22 serif usages in the canvas became one `--sans` token.
+`--serif` is deliberately **not** defined in `theme.css` any more, so a stray reference
+fails visibly rather than falling back to Times without anyone noticing.
+
+Bundled as four woff2 files — roman (variable 400–800) and italic (400–600), each in
+latin and latin-ext. **93 KB, down from 129 KB**, because one variable family replaces
+two. The italic is bundled although the canvas no longer uses it: 47 KB is cheaper than
+discovering it missing after a release.
+
+The type scale was rebalanced rather than swapped, because a sans needs different
+settings to carry the same emphasis a serif carried:
+
+| Element | Was | Now |
+|---|---|---|
+| Wordmark | Lora 23 / 500 | 20 / 700 |
+| `Saved` | Lora 31 / 500 | 29 / 600 |
+| Day heading | Lora 17 | 15 / 600 |
+| Row lead | Lora 20 / 500 | 18 / 600 |
+| Passage | Lora 15 *italic* | 15, **no italic** |
+
+The passage loses its italic. At a sans this size italic reads as emphasis rather than
+quotation, and the accent rule down its left already says "quoted".
+
+**Removed: date-range filter.** Search covers it, and two empty `dd/mm/yyyy` fields sat
+in the header permanently to serve a rare case.
+
+**Removed: Title sort.** With it goes the only case that abandoned day grouping — the
+shelf is now always chronological, which is what PRD §8.2's timeline is for.
+
+**Empty-state copy** follows: "Nothing matches that search. Clear it to see everything."
+It can no longer suggest widening dates that do not exist.
+
+The export's inline stylesheet names Public Sans but ships no font file — a self-contained
+export cannot carry a woff2 without base64-inflating it. It falls back to the system sans,
+which matches in rhythm if not in face.
+
+`test/design.test.mjs` now guards typography the way it already guarded colour: the canvas
+must declare a sans and no serif, no shipped file may name a retired typeface, and every
+bundled font must be referenced and every reference must exist. A leftover `Lora` does not
+error — it silently renders one surface in a different face.
+
+Logo mark 1a is unchanged in geometry; only its labels were retyped. Icons stand.
+
 ### Undesigned surfaces
 
 Not covered by the canvas. Each is resolved at its build step, not now.

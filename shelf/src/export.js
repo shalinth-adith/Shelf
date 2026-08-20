@@ -77,24 +77,27 @@ const STYLE = `
 --accent-soft:#2C1F1A}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);
-font-family:Karla,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+/* The bundled woff2 cannot travel inside a single self-contained file without
+   base64-inflating it, so the export names the family and lets the system sans take
+   over. It renders identically in shape and rhythm, just not in the exact face. */
+font-family:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
 .wrap{max-width:820px;margin:0 auto;padding:0 28px}
 header{border-bottom:1px solid var(--rule);padding:44px 0 0}
-h1{font-family:Lora,Georgia,serif;font-size:31px;font-weight:500;margin:0 0 6px;letter-spacing:-.015em}
+h1{font-size:29px;font-weight:600;margin:0 0 6px;letter-spacing:-.02em}
 .sub{margin:0 0 22px;font-size:14px;color:var(--muted)}
 .search{display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--rule);padding:6px 2px;margin-bottom:18px}
 .search input{flex:1;background:none;border:0;outline:0;font:inherit;font-size:15px;color:var(--ink)}
 main{padding:30px 0 90px}
-.day{font-family:Lora,Georgia,serif;font-size:15px;color:var(--muted);
+.day{font-size:14px;font-weight:600;color:var(--muted);
 margin:34px 0 4px;padding-bottom:8px;border-bottom:1px solid var(--rule-soft)}
 .day:first-child{margin-top:0}
 article{padding:20px 0 22px;border-bottom:1px solid var(--rule-soft)}
 .meta{font-size:12.5px;color:var(--muted);padding-bottom:7px}
 .meta b{color:var(--ink-2);font-weight:400}
-.lead{font-family:Lora,Georgia,serif;font-size:19px;line-height:1.4;font-weight:500;
+.lead{font-size:17px;line-height:1.45;font-weight:600;
 color:var(--ink);text-decoration:none;display:block;letter-spacing:-.01em}
 .lead:hover{color:var(--accent)}
-.lead.q{font-style:italic;padding-left:14px;border-left:2px solid var(--accent-soft)}
+.lead.q{padding-left:14px;border-left:2px solid var(--accent-soft)}
 .title2{display:block;margin-top:9px;font-size:13.5px;color:var(--ink-2);text-decoration:none}
 .title2:hover{color:var(--accent)}
 .note{margin-top:11px;font-size:13.5px;line-height:1.55;color:var(--ink-2)}

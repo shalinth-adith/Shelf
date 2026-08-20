@@ -11,10 +11,7 @@ main { max-width: 620px; margin: 0 auto; padding: 60px 32px 90px; }
   margin: 0 0 10px; font-size: 12px; letter-spacing: 0.08em;
   text-transform: uppercase; color: var(--muted);
 }
-h1 {
-  font-family: var(--serif); font-size: 33px; font-weight: 500;
-  letter-spacing: -0.02em; margin: 0 0 18px; line-height: 1.2;
-}
+h1 { font-size: 30px; font-weight: 700; letter-spacing: -0.03em; margin: 0 0 18px; line-height: 1.22; }
 section p { font-size: 15px; line-height: 1.65; color: var(--ink-2); margin: 0 0 15px; max-width: 56ch; }
 section p b { color: var(--ink); font-weight: 500; }
 
@@ -29,14 +26,14 @@ section p b { color: var(--ink); font-weight: 500; }
   background: var(--sheet); border: 1px solid var(--rule); border-radius: 9px;
 }
 .demo blockquote {
-  margin: 0 0 12px; font-family: var(--serif); font-style: italic;
-  font-size: 19px; line-height: 1.45; color: var(--ink);
+  margin: 0 0 12px; font-size: 18px; font-weight: 600;
+  line-height: 1.45; color: var(--ink);
 }
 .demo figcaption { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
 .avatar {
   width: 15px; height: 15px; border-radius: 3px;
   background: var(--accent-soft); color: var(--accent);
-  font-family: var(--serif); font-size: 10px;
+  font-size: 9.5px; font-weight: 600;
   display: flex; align-items: center; justify-content: center;
 }
 

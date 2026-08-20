@@ -15,7 +15,7 @@ body {
   display: flex; align-items: center; gap: 9px;
   padding: 13px 16px; border-bottom: 1px solid var(--rule-soft);
 }
-.wordmark { font-family: var(--serif); font-size: 14px; font-weight: 600; }
+.wordmark { font-size: 14px; font-weight: 700; letter-spacing: -0.02em; }
 .spacer { flex: 1; }
 .count { font-size: 11px; color: var(--muted); letter-spacing: 0.05em; }
 
@@ -25,11 +25,11 @@ body {
 .avatar {
   width: 15px; height: 15px; border-radius: 3px; flex: none;
   background: var(--accent-soft); color: var(--accent);
-  font-family: var(--serif); font-size: 10px;
+  font-size: 9.5px; font-weight: 600;
   display: flex; align-items: center; justify-content: center;
 }
 
-.lead { font-family: var(--serif); font-size: 17px; line-height: 1.4; margin: 0 0 6px; }
+.lead { font-size: 15.5px; font-weight: 600; line-height: 1.45; margin: 0 0 6px; }
 .sub { margin: 0; font-size: 13px; line-height: 1.55; color: var(--muted); }
 .sub b { color: var(--ink-2); font-weight: 500; }
 .tiny { font-size: 11.5px; padding-top: 11px; }
