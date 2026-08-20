@@ -13,6 +13,10 @@
 import * as db from './db.js';
 import { buildExportHtml, domainTally } from './export.js';
 import {
+  BACKUP_INTERVAL_MS, NAG_AFTER_MS, buildBackupJson, parseBackupJson,
+  supportsDirectoryBackup, pickBackupDirectory, hasWriteAccess, writeBackup, downloadJson,
+} from './backup.js';
+import {
   dayKey, dayHeading, clockTime, relativeTime, fullTimestamp,
   domainInitial, collapseWhitespace,
 } from './util.js';
@@ -490,6 +494,133 @@ function runExport() {
 }
 
 /* ================================================================== *
+ * Backup — TRD §13, PRD §9 and §12
+ * ================================================================== */
+
+/**
+ * Automatic backup on shelf open.
+ *
+ * Runs here rather than in the worker because a directory handle loses permission across
+ * browser restarts, and regaining it needs a user gesture the worker can never have. A
+ * worker-driven backup would work until the first restart and then stop silently — which
+ * is the worst failure a backup can have, because it still looks configured.
+ *
+ * Never prompts. If the handle went stale, this is a no-op and the footer says so; the
+ * user reconnects it with a click, which is a gesture.
+ */
+async function autoBackup() {
+  const handle = await db.getMeta('backupDir');
+  if (!handle) return;
+
+  const last = (await db.getMeta('lastBackupAt')) ?? 0;
+  if (Date.now() - last < BACKUP_INTERVAL_MS) return;
+
+  if (!(await hasWriteAccess(handle, false))) {
+    log('backup handle needs re-permission — waiting for a gesture');
+    return;
+  }
+  await runBackup(handle, 'auto');
+}
+
+async function runBackup(handle, why) {
+  try {
+    const { written } = await writeBackup(handle, buildBackupJson(state.clips));
+    await db.setMeta('lastBackupAt', Date.now());
+    log(`backup (${why}):`, written ? 'written' : 'unchanged, skipped');
+    await renderBackupStatus();
+    return true;
+  } catch (err) {
+    console.error('[shelf:page] backup failed', err);
+    $('backup-status').textContent = 'Backup failed: ' + (err?.message ?? err);
+    return false;
+  }
+}
+
+async function chooseBackupFolder() {
+  if (!supportsDirectoryBackup()) {
+    // TRD §13 — say so plainly rather than offering a control that cannot work.
+    $('backup-status').textContent =
+      'This browser cannot write to a folder. Use Download JSON and keep the file somewhere safe.';
+    return;
+  }
+  const handle = await pickBackupDirectory();
+  if (!handle) return;                       // dismissed
+  // Structured-cloneable, so it persists in IndexedDB across restarts (TRD §5.2).
+  await db.setMeta('backupDir', handle);
+  await runBackup(handle, 'first');
+}
+
+async function backupNow() {
+  const handle = await db.getMeta('backupDir');
+  if (!handle) return chooseBackupFolder();
+  // This IS a gesture, so unlike autoBackup it may prompt to reconnect a stale handle.
+  if (!(await hasWriteAccess(handle, true))) {
+    $('backup-status').textContent = 'Backup folder access was declined.';
+    return;
+  }
+  await runBackup(handle, 'manual');
+}
+
+async function restoreFromFile(file) {
+  const result = parseBackupJson(await file.text());
+  if (!result.ok) {
+    $('backup-status').textContent = result.error;
+    return;
+  }
+
+  // put, not add — restoring over an existing library merges by id rather than throwing
+  // on the first clip that is already there. Restoring the same backup twice is a no-op,
+  // which is the behaviour someone unsure whether it worked will rely on.
+  let restored = 0;
+  for (const clip of result.clips) {
+    await db.putClip(clip);
+    restored++;
+  }
+  state.clips = await db.getAllClips();
+  log('restored', restored);
+  $('backup-status').textContent = `Restored ${restored} ${restored === 1 ? 'clip' : 'clips'}.`;
+  render();
+}
+
+async function renderBackupStatus() {
+  const handle = await db.getMeta('backupDir');
+  const last = (await db.getMeta('lastBackupAt')) ?? 0;
+  const installed = (await db.getMeta('installedAt')) ?? Date.now();
+  const status = $('backup-status');
+
+  $('backup-now').disabled = false;
+  $('backup-choose').textContent = handle ? 'Change backup folder' : 'Choose backup folder';
+
+  if (handle) {
+    const live = await hasWriteAccess(handle, false);
+    status.textContent = !live
+      ? `Backup folder "${handle.name}" needs reconnecting — click Back up now.`
+      : last
+        ? `Backed up to "${handle.name}" ${relativeTime(last, Date.now())} ago.`
+        : `Backup folder "${handle.name}" is set. Nothing written yet.`;
+  } else if (!supportsDirectoryBackup()) {
+    status.textContent = 'This browser cannot write to a folder. Download JSON regularly instead.';
+  } else {
+    status.textContent = 'No backup folder set. Lose this machine and the clips go with it.';
+  }
+
+  // The escalating warning. PRD §12 rates machine-loss-without-backup High, and the
+  // mitigation is that this gets harder to ignore rather than appearing once and going
+  // away. It disappears entirely once a folder is set — nagging someone who already did
+  // the thing is how a warning gets trained out.
+  const banner = $('nobackup');
+  const overdue = Date.now() - installed > NAG_AFTER_MS;
+  banner.hidden = Boolean(handle) || state.clips.length === 0;
+  banner.dataset.level = overdue ? 'urgent' : 'calm';
+  $('nobackup-title').textContent = overdue
+    ? `${state.clips.length} clips, still no backup`
+    : 'No backup yet';
+  $('nobackup-body').textContent = overdue
+    ? 'A week of saving with nothing outside this browser. Point Shelf at a Dropbox or iCloud folder and it backs itself up — that also gets you sync between machines.'
+    : 'Your clips live only in this browser. Point Shelf at a folder and it keeps a copy for you.';
+}
+
+/* ================================================================== *
  * Theme
  * ================================================================== */
 
@@ -535,6 +666,16 @@ function bind() {
 
   $('theme').addEventListener('click', toggleTheme);
   $('export').addEventListener('click', openExport);
+  $('backup-choose').addEventListener('click', chooseBackupFolder);
+  $('nobackup-setup').addEventListener('click', chooseBackupFolder);
+  $('backup-now').addEventListener('click', backupNow);
+  $('backup-download').addEventListener('click', () => downloadJson(buildBackupJson(state.clips)));
+  $('backup-restore').addEventListener('click', () => $('restore-input').click());
+  $('restore-input').addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (file) restoreFromFile(file);
+    e.target.value = '';          // so picking the same file twice fires again
+  });
   for (const radio of $('exportdlg').querySelectorAll('input[name="scope"]')) {
     radio.addEventListener('change', updateScope);
   }
@@ -562,6 +703,8 @@ async function main() {
   state.clips = await db.getAllClips();
   log(`loaded ${state.clips.length} clips in ${(performance.now() - t0).toFixed(1)}ms`);
   render();
+  await renderBackupStatus();
+  autoBackup();          // deliberately not awaited — never delay first paint for it
 }
 
 main();

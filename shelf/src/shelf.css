@@ -279,3 +279,30 @@ dialog::backdrop { background: rgba(27,26,23,0.38); }
   padding: 8px 16px; border-radius: 6px; font-size: 13.5px; cursor: pointer;
 }
 .dlg-actions .danger:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ---------------------------------------------------------------- backup */
+
+footer { border-top: 1px solid var(--rule); margin-top: 44px; }
+.foot-line { margin: 0 0 7px; }
+.sep { padding: 0 8px; opacity: 0.5; }
+
+.link-btn {
+  background: none; border: none; padding: 0;
+  font-size: 12.5px; color: var(--accent); cursor: pointer;
+}
+.link-btn:hover { text-decoration: underline; text-underline-offset: 3px; }
+.link-btn:disabled { color: var(--muted); cursor: not-allowed; text-decoration: none; }
+
+/* PRD §12: machine lost with no backup is a High-severity risk, and the mitigation is
+   an escalating warning. Quiet at first, unmissable after a week. */
+.nobackup {
+  display: flex; align-items: center; gap: 16px; justify-content: space-between;
+  border: 1px solid var(--rule); border-radius: 8px;
+  padding: 14px 16px; margin-bottom: 26px;
+  font-size: 13.5px; line-height: 1.55; color: var(--ink-2);
+}
+.nobackup b { display: block; color: var(--ink); font-weight: 500; margin-bottom: 2px; }
+.nobackup[data-level="urgent"] {
+  border-color: var(--accent); background: var(--accent-soft);
+}
+.nobackup[data-level="urgent"] b { color: var(--accent); }

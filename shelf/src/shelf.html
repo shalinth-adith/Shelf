@@ -40,6 +40,14 @@
 </header>
 
 <main class="wrap">
+  <div class="nobackup" id="nobackup" hidden>
+    <div>
+      <b id="nobackup-title">No backup yet</b>
+      <span id="nobackup-body"></span>
+    </div>
+    <button class="ghost-btn" id="nobackup-setup" type="button">Set up backup</button>
+  </div>
+
   <div class="pagehead">
     <div>
       <h1>Saved</h1>
@@ -60,7 +68,18 @@
   </div>
 
   <footer>
-    Everything on this page lives in this browser only. No account, no sync, no server.
+    <p class="foot-line">Everything on this page lives in this browser only. No account, no sync, no server.</p>
+    <p class="foot-line" id="backup-status">Checking backup…</p>
+    <p class="foot-line">
+      <button class="link-btn" id="backup-choose" type="button">Choose backup folder</button>
+      <span class="sep">·</span>
+      <button class="link-btn" id="backup-now" type="button">Back up now</button>
+      <span class="sep">·</span>
+      <button class="link-btn" id="backup-download" type="button">Download JSON</button>
+      <span class="sep">·</span>
+      <button class="link-btn" id="backup-restore" type="button">Restore from file</button>
+      <input type="file" id="restore-input" accept="application/json,.json" hidden>
+    </p>
   </footer>
 </main>
 

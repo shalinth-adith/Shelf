@@ -25,7 +25,7 @@ that was supposed to catch it being wrong.
 | 5 | `content.js` | ✅ bar renders and saves on medium.com |
 | 6 | `shelf.js` | ✅ renders; perf number outstanding |
 | 7 | `export.js` | ⏳ awaiting file:// check |
-| 8 | Backup | — |
+| 8 | Backup | ⏳ awaiting acceptance check |
 | 9 | Popup + onboarding | — |
 | 10 | Safari conversion | — |
 
