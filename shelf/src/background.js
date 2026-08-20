@@ -146,16 +146,37 @@ function flashBadge(text, color) {
  * everything else degrades to it.
  * ================================================================== */
 
+/**
+ * In-flight installation, so concurrent callers share one pass rather than racing
+ * removeAll against create.
+ *
+ * This IS module-scope mutable state, which §10 warns about — but it is a cache whose
+ * loss is harmless. When the worker respawns it resets to null and the menu is simply
+ * reinstalled, which is exactly what we want.
+ * @type {Promise<void> | null}
+ */
+let menuReady = null;
+
+function ensureContextMenu() {
+  if (!menuReady) menuReady = installContextMenu();
+  return menuReady;
+}
+
 async function installContextMenu() {
-  // removeAll before create, or a duplicate id throws on every worker respawn that
-  // re-runs installation.
-  await chrome.contextMenus.removeAll();
-  chrome.contextMenus.create({
-    id: MENU_ID,
-    title: 'Save selection to Shelf',
-    contexts: ['selection'],
-  });
-  log('context menu installed');
+  try {
+    // removeAll before create, or a duplicate id throws on every pass that re-runs
+    // installation.
+    await chrome.contextMenus.removeAll();
+    await chrome.contextMenus.create({
+      id: MENU_ID,
+      title: 'Save selection to Shelf',
+      contexts: ['selection'],
+    });
+    log('context menu installed');
+  } catch (err) {
+    menuReady = null;               // let the next caller retry
+    console.error('[shelf:sw] context menu install failed', err);
+  }
 }
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
@@ -174,7 +195,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
 chrome.runtime.onInstalled.addListener(async (details) => {
   log('onInstalled', details.reason);
-  await installContextMenu();
+  await ensureContextMenu();
 
   // First-run stamp. Onboarding's "no backup yet" escalation counts from here (PRD §9).
   if (details.reason === 'install') {
@@ -186,7 +207,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 // Menus survive worker teardown but not always a browser restart. Cheap to re-assert.
 chrome.runtime.onStartup.addListener(() => {
   log('onStartup');
-  installContextMenu();
+  ensureContextMenu();
 });
 
 /* ================================================================== *
@@ -252,5 +273,16 @@ async function hasHostPermission(url) {
 
 globalThis.shelfDb = db;
 globalThis.shelfSave = saveClip;
+
+/**
+ * Install on every worker spawn.
+ *
+ * onInstalled fires once per install or update; onStartup once per browser launch.
+ * Neither fires when MV3 tears the worker down for idling and respawns it on the next
+ * event — and if the menu was ever lost, nothing would put it back until the browser
+ * restarted. Context menus are cheap to re-assert, and the universal fallback save path
+ * (§9.1) is the last thing that should depend on a lifecycle event firing.
+ */
+ensureContextMenu();
 
 console.debug('[shelf] worker boot', new Date().toISOString());
