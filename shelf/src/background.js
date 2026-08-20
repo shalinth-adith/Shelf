@@ -242,10 +242,17 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   log('onInstalled', details.reason);
   await ensureContextMenu();
 
-  // First-run stamp. Onboarding's "no backup yet" escalation counts from here (PRD §9).
-  if (details.reason === 'install') {
-    const existing = await db.getMeta('installedAt');
-    if (existing === undefined) await db.setMeta('installedAt', Date.now());
+  // First-run stamp. The no-backup escalation counts from here (PRD §9, §12).
+  //
+  // Deliberately NOT gated on reason === 'install'. Anyone who installed before this
+  // field existed — and anyone whose first install predates an update — would otherwise
+  // never get one, and getMeta('installedAt') falling back to Date.now() means the
+  // seven-day warning silently never escalates. A missing stamp is the one case that
+  // needs writing, whatever the reason.
+  const existing = await db.getMeta('installedAt');
+  if (existing === undefined) {
+    await db.setMeta('installedAt', Date.now());
+    log('installedAt stamped');
   }
 });
 
