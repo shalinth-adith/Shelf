@@ -174,3 +174,25 @@ test('a clip missing savedAt does not sort as NaN', () => {
   const html = buildExportHtml([clip({ id: 'a', savedAt: undefined }), clip({ id: 'b' })]);
   assert.equal(html, buildExportHtml([clip({ id: 'b' }), clip({ id: 'a', savedAt: undefined })]));
 });
+
+test('the static header and the runtime header agree', () => {
+  // They are two separate pieces of code writing the same element — the static one for
+  // anyone with JS disabled, the runtime one on every keystroke. When they disagree the
+  // header changes shape the instant the page renders, and nobody sees the first version
+  // long enough to notice it was different.
+  const html = buildExportHtml([clip({ id: 'a' }), clip({ id: 'b', domain: 'github.com' })]);
+
+  const staticText = html.match(/id="count">([^<]+)</)[1];
+  assert.match(staticText, /2 passages from 2 sites/);
+
+  // the runtime script must build the same shape: "<n> passages from <n> sites"
+  assert.match(html, /' from '\+nd\+\(nd===1\?' site':' sites'\)/,
+    'runtime count must include the site tally');
+});
+
+test('the header does not repeat itself', () => {
+  const html = buildExportHtml([clip()]);
+  const line = html.match(/<p class="sub">(.*?)<\/p>/s)[1];
+  const passages = (line.match(/passage/g) || []).length;
+  assert.equal(passages, 1, `"passage" appears ${passages} times in the header line`);
+});

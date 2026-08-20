@@ -129,7 +129,10 @@ var list=DATA.filter(function(c){
 if(!terms.length)return true;
 var hay=(c.text+' '+c.note+' '+c.title+' '+c.domain).toLowerCase();
 return terms.every(function(t){return hay.indexOf(t)>-1});});
-document.getElementById('count').textContent=list.length+(list.length===1?' passage':' passages');
+var doms={};list.forEach(function(c){doms[c.domain||'local']=1});
+var nd=Object.keys(doms).length;
+document.getElementById('count').textContent=
+list.length+(list.length===1?' passage':' passages')+' from '+nd+(nd===1?' site':' sites');
 if(!list.length){main.append(el('p','none','Nothing matches that search.'));return}
 var seen='';
 list.forEach(function(c){
@@ -171,6 +174,10 @@ export function buildExportHtml(clips, options = {}) {
   const payload = sorted.map(publicShape);
   const sites = domainTally(sorted).length;
 
+  // The filter script rewrites this same element on every keystroke, so the two must
+  // produce the same phrasing — otherwise the header silently changes shape the instant
+  // the page renders, which is exactly what it did: "4 passages from 4 sites" became
+  // "4 passages" before anyone could read it.
   const subtitle = `${sorted.length} ${sorted.length === 1 ? 'passage' : 'passages'}`
     + ` from ${sites} ${sites === 1 ? 'site' : 'sites'}`;
 
@@ -186,7 +193,7 @@ export function buildExportHtml(clips, options = {}) {
 <body>
 <header class="wrap">
 <h1>${escapeHtml(title)}</h1>
-<p class="sub"><span id="count">${escapeHtml(subtitle)}</span> · saved passages, kept offline</p>
+<p class="sub"><span id="count">${escapeHtml(subtitle)}</span> · kept offline</p>
 <div class="search"><span aria-hidden="true">&#8981;</span><input id="q" type="search" placeholder="Search these passages" aria-label="Search"></div>
 </header>
 <main class="wrap" id="list"></main>

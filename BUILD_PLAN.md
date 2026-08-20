@@ -24,7 +24,7 @@ that was supposed to catch it being wrong.
 | 4 | `background.js` | ✅ context menu saved on non-granted youtube.com |
 | 5 | `content.js` | ✅ bar renders and saves on medium.com |
 | 6 | `shelf.js` | ✅ 205 clips rendered in 5.4ms (budget 200ms) |
-| 7 | `export.js` | ⏳ awaiting file:// check |
+| 7 | `export.js` | ✅ 1 request from file:// — the document itself |
 | 8 | Backup | ⏳ awaiting acceptance check |
 | 9 | Popup + onboarding | ⏳ awaiting acceptance check |
 | 10 | Safari conversion | ▶ next — all Chrome steps built |
