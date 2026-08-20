@@ -159,7 +159,7 @@ render('');
  *     know when the file was written, and a timestamp would defeat the entire property.
  *
  * @param {object[]} clips
- * @param {{title?: string}} [options]
+ * @param {{title?: string, footerNote?: string}} [options]
  * @returns {string}
  */
 export function buildExportHtml(clips, options = {}) {
@@ -189,7 +189,7 @@ export function buildExportHtml(clips, options = {}) {
 <main class="wrap" id="list"></main>
 <footer class="wrap">
 This file is self-contained. It makes no network requests, loads nothing remotely, and
-works offline from disk. Exported from Shelf, a local-first clipper.
+works offline from disk. Exported from Shelf, a local-first clipper.${options.footerNote ? '<br>' + escapeHtml(options.footerNote) : ''}
 </footer>
 <script type="application/json" id="shelf-data">${inlineJson(payload)}</script>
 <script>${SCRIPT}</script>

@@ -16,7 +16,20 @@
 
 /** Bump if the file shape changes in a way a reader must branch on. */
 export const BACKUP_VERSION = 1;
+/**
+ * TWO files, and the pair is the point (PRD principle 1: "plain JSON and readable HTML").
+ *
+ *   .json  machine-readable. Restores the library exactly, including the fields an
+ *          export withholds. Useless to a person with a text editor.
+ *   .html  human-readable. Opens in any browser, forever, with no Shelf and no server.
+ *
+ * The JSON alone covers "I lost my laptop". It does not cover "Shelf is gone" — and that
+ * is the scenario this product was built in response to, since Pocket's users were left
+ * holding exports of a service that no longer existed. A backup you cannot read without
+ * the dead application is not an archive, it is a hostage.
+ */
 export const BACKUP_FILENAME = 'shelf-backup.json';
+export const BACKUP_HTML_FILENAME = 'shelf-backup.html';
 
 /** Back up if the last one is older than this. TRD §13. */
 export const BACKUP_INTERVAL_MS = 12 * 60 * 60 * 1000;
@@ -116,28 +129,43 @@ export async function hasWriteAccess(handle, interactive = false) {
 }
 
 /**
- * Write the backup, skipping the write when nothing changed.
+ * Write one file, skipping when the bytes are unchanged.
  *
  * The skip matters because the target is usually a synced folder. Writing identical
- * bytes every 12 hours would wake Dropbox, re-upload, and burn the user's bandwidth and
- * version history to say nothing new.
+ * content every 12 hours would wake Dropbox, re-upload, and fill the version history to
+ * say nothing new. It is also why neither file carries a timestamp inside it.
  *
- * @returns {Promise<{written: boolean, bytes: number}>}
+ * @returns {Promise<boolean>} whether anything was actually written
  */
-export async function writeBackup(handle, json) {
-  const file = await handle.getFileHandle(BACKUP_FILENAME, { create: true });
+async function writeFile(handle, name, content) {
+  const file = await handle.getFileHandle(name, { create: true });
 
   try {
     const existing = await (await file.getFile()).text();
-    if (existing === json) return { written: false, bytes: json.length };
+    if (existing === content) return false;
   } catch {
     /* no existing file, or unreadable — fall through and write */
   }
 
   const stream = await file.createWritable();
-  await stream.write(json);
+  await stream.write(content);
   await stream.close();
-  return { written: true, bytes: json.length };
+  return true;
+}
+
+/**
+ * Write the backup pair.
+ *
+ * @param {FileSystemDirectoryHandle} handle
+ * @param {string} json  from buildBackupJson
+ * @param {string} html  from buildExportHtml over the WHOLE library
+ * @returns {Promise<{written: string[]}>} which files actually changed
+ */
+export async function writeBackup(handle, json, html) {
+  const written = [];
+  if (await writeFile(handle, BACKUP_FILENAME, json)) written.push(BACKUP_FILENAME);
+  if (html && await writeFile(handle, BACKUP_HTML_FILENAME, html)) written.push(BACKUP_HTML_FILENAME);
+  return { written };
 }
 
 /** Fallback for browsers with no directory access, and always available besides. */

@@ -148,6 +148,35 @@ toggle, the "Restricted page" popup state, the storage-pressure popup state, and
 Theme preference persists to `browser.storage.local` alongside `defaultColor` (TRD §5.3),
 not to `localStorage` as the mock does — the mock had no extension storage available.
 
+### Amendment — 2026-08-20 — a backup is two files, not one
+
+D4 split JSON (backup) from HTML (share). That left a gap: the backup folder held only
+`shelf-backup.json`, which a person cannot read.
+
+**Decision:** every backup writes a pair into the folder.
+
+| File | Answers | Readable |
+|---|---|---|
+| `shelf-backup.json` | "I lost my laptop" — restores into Shelf exactly | No |
+| `shelf-backup.html` | "Shelf no longer exists" — opens in any browser, forever | Yes |
+
+**Why the second one is not optional.** The JSON alone covers hardware loss. It does not
+cover the product disappearing — and that is the scenario Shelf was built in response to.
+PRD §1 opens on Pocket deleting eighteen years of saves; its users were left holding
+exports of a service that no longer existed. A backup you cannot read without the dead
+application is not an archive, it is a hostage. PRD principle 1 says this outright:
+"plain JSON **and readable HTML**".
+
+The HTML copy carries the **whole** library, unlike the share export which defaults to
+`isPublic` only. A backup that silently omits unmarked clips is worse than no backup.
+This does not weaken §8.4's confirmation, which guards *publishing*; writing to the
+user's own backup folder is the personal-safety act D4 already exempted.
+
+Both files skip the write when unchanged, and neither carries an internal timestamp, so a
+synced folder stays quiet.
+
+Also downloadable directly from the shelf footer, for browsers with no directory access.
+
 ### Undesigned surfaces
 
 Not covered by the canvas. Each is resolved at its build step, not now.

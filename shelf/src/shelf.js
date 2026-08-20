@@ -13,7 +13,8 @@
 import * as db from './db.js';
 import { buildExportHtml, domainTally } from './export.js';
 import {
-  BACKUP_INTERVAL_MS, NAG_AFTER_MS, buildBackupJson, parseBackupJson,
+  BACKUP_INTERVAL_MS, NAG_AFTER_MS, BACKUP_FILENAME, BACKUP_HTML_FILENAME,
+  buildBackupJson, parseBackupJson,
   supportsDirectoryBackup, pickBackupDirectory, hasWriteAccess, writeBackup, downloadJson,
 } from './backup.js';
 import {
@@ -524,9 +525,17 @@ async function autoBackup() {
 
 async function runBackup(handle, why) {
   try {
-    const { written } = await writeBackup(handle, buildBackupJson(state.clips));
+    // The pair, not just the JSON. PRD principle 1 — the JSON covers "I lost my laptop",
+    // the HTML covers "Shelf no longer exists", and only the second is the scenario this
+    // product was built in response to.
+    const html = buildExportHtml(state.clips, {
+      title: 'Shelf — full archive',
+      footerNote: `A complete copy of the library, readable without Shelf. `
+        + `${BACKUP_FILENAME} beside it restores everything back into the extension.`,
+    });
+    const { written } = await writeBackup(handle, buildBackupJson(state.clips), html);
     await db.setMeta('lastBackupAt', Date.now());
-    log(`backup (${why}):`, written ? 'written' : 'unchanged, skipped');
+    log(`backup (${why}):`, written.length ? written.join(', ') : 'unchanged, skipped');
     await renderBackupStatus();
     return true;
   } catch (err) {
@@ -596,7 +605,8 @@ async function renderBackupStatus() {
     status.textContent = !live
       ? `Backup folder "${handle.name}" needs reconnecting — click Back up now.`
       : last
-        ? `Backed up to "${handle.name}" ${relativeTime(last, Date.now())} ago.`
+        ? `Backed up to "${handle.name}" ${relativeTime(last, Date.now())} ago — `
+          + `${BACKUP_FILENAME} to restore, ${BACKUP_HTML_FILENAME} to read.`
         : `Backup folder "${handle.name}" is set. Nothing written yet.`;
   } else if (!supportsDirectoryBackup()) {
     status.textContent = 'This browser cannot write to a folder. Download JSON regularly instead.';
@@ -670,6 +680,13 @@ function bind() {
   $('nobackup-setup').addEventListener('click', chooseBackupFolder);
   $('backup-now').addEventListener('click', backupNow);
   $('backup-download').addEventListener('click', () => downloadJson(buildBackupJson(state.clips)));
+  $('backup-read').addEventListener('click', () => {
+    const html = buildExportHtml(state.clips, { title: 'Shelf — full archive' });
+    const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = BACKUP_HTML_FILENAME; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  });
   $('backup-restore').addEventListener('click', () => $('restore-input').click());
   $('restore-input').addEventListener('change', (e) => {
     const file = e.target.files?.[0];

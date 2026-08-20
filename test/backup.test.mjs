@@ -9,8 +9,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  BACKUP_VERSION, buildBackupJson, parseBackupJson,
+  BACKUP_VERSION, BACKUP_FILENAME, BACKUP_HTML_FILENAME, buildBackupJson, parseBackupJson,
 } from '../shelf/src/backup.js';
+import { buildExportHtml } from '../shelf/src/export.js';
 
 const clip = (over = {}) => ({
   id: 'id-1',
@@ -117,4 +118,38 @@ test('the file is human-readable', () => {
   const json = buildBackupJson([clip()]);
   assert.match(json, /\n  "clips": \[/, 'expected indentation');
   assert.ok(json.includes('A collection is not a hoard.'), 'text should be plainly visible');
+});
+
+/* ---------------------------------------------------------------- the pair */
+
+test('the backup pair covers both failure modes', () => {
+  // PRD principle 1: "plain JSON and readable HTML ... if this is abandoned tomorrow,
+  // nothing is lost." The JSON alone only covers losing the machine. It does not cover
+  // losing Shelf — which is exactly what happened to Pocket's users, and the reason this
+  // product exists.
+  assert.notEqual(BACKUP_FILENAME, BACKUP_HTML_FILENAME);
+  assert.match(BACKUP_FILENAME, /\.json$/);
+  assert.match(BACKUP_HTML_FILENAME, /\.html$/);
+});
+
+test('the readable copy is legible with no Shelf and no server', () => {
+  const clips = [clip({ text: 'A collection is not a hoard.', note: 'stewardship' })];
+  const html = buildExportHtml(clips, { title: 'Shelf — full archive' });
+
+  // The passage, its note, its source and its date must all be visible as plain text or
+  // reconstructible from the payload — not locked behind an app that may not exist.
+  assert.ok(html.includes('A collection is not a hoard.'));
+  assert.ok(html.includes('stewardship'));
+  assert.ok(html.includes('aeon.co'));
+  assert.match(html, /^<!doctype html>/);
+  // and it must not need anything from the network to render
+  assert.doesNotMatch(html, /\bfetch\s*\(|<link[^>]+href="https?:/);
+});
+
+test('the readable copy carries the whole library, not just marked clips', () => {
+  // The share export defaults to isPublic only. The archive copy must not — a backup
+  // that silently omits unmarked clips is worse than no backup.
+  const clips = [clip({ id: 'a', isPublic: false }), clip({ id: 'b', isPublic: true })];
+  const html = buildExportHtml(clips, { title: 'Shelf — full archive' });
+  assert.match(html, /2 passages/);
 });
