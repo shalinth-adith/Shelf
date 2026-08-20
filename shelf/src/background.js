@@ -114,7 +114,10 @@ async function saveClip(capture) {
 
     await db.addClip(clip);
     const pageCount = await db.countByUrlHash(clip.urlHash);
-    log('saved', clip.id, clip.domain, 'pageCount', pageCount);
+    // The source tag distinguishes the three save paths in the log. They all funnel
+    // through here by design (§8), which makes them indistinguishable without it.
+    log('saved via', capture.source || 'unknown', '—', clip.id, clip.domain,
+        'pageCount', pageCount);
 
     flashBadge('✓', '#1F5C5C');
     return { ok: true, id: clip.id, pageCount };
@@ -182,6 +185,7 @@ async function installContextMenu() {
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId !== MENU_ID) return;
   saveClip({
+    source: 'context-menu',
     text: info.selectionText ?? '',
     // info.pageUrl is present even without host permissions; tab.url may not be.
     url: info.pageUrl ?? tab?.url ?? '',

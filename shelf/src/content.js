@@ -253,6 +253,7 @@
 
     const seconds = mediaSeconds();
     const payload = {
+      source: 'bar',
       text: lastCapture.text,
       url: urlWithTime(seconds),
       title: document.title,
