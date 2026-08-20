@@ -45,6 +45,17 @@ a { color: var(--accent); text-decoration: none; }
 a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 ::selection { background: var(--accent-soft); }
 
+/**
+ * [hidden] must beat layout.
+ *
+ * The UA stylesheet sets `[hidden] { display: none }` at its lowest specificity, so any
+ * class rule with a `display` — `.selbar { display: flex }` — silently overrides it and
+ * the element stays on screen with its `hidden` property set to true. The JS looks
+ * correct, the DOM says hidden, and the thing is visible. Global and !important because
+ * the alternative is remembering a `.x[hidden]` override for every future component.
+ */
+[hidden] { display: none !important; }
+
 /* Visible focus everywhere. The shelf is meant to be usable without a mouse (PRD U12),
    and the default outline disappears against --paper on several of these controls. */
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
