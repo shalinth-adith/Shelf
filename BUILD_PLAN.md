@@ -209,6 +209,9 @@ quit). The $99/year account is needed to ship, not to develop. (TRD §17)
 
 ## Manual checklist (run before each submission)
 
+**Chrome status, 2026-08-21.** Verified: 1, 2, 3, 4, 8, 10, 11 (write half).
+Outstanding: 5, 6, 7, 9, 11 (restore half), 12.
+
 From TRD §16. No automation exists for Safari, so this is run by hand.
 
 1. Fresh install → welcome screen
