@@ -25,8 +25,16 @@ import {
 
 const log = (...a) => console.debug('[shelf:page]', ...a);
 
-/** How long a deleted clip can be restored. D6. */
-const UNDO_MS = 8000;
+/**
+ * How long a deleted clip can be restored. D6.
+ *
+ * 20 seconds, not the 8 it started at. The record is removed from IndexedDB immediately
+ * and held only in memory, so when this expires the clip is gone for good — and eight
+ * seconds is not enough to click Remove, read the toast, decide, and reach for a
+ * keyboard shortcut. An undo window that closes while you are still deciding is not an
+ * undo, and this product's entire promise is not losing passages.
+ */
+const UNDO_MS = 20000;
 
 /** TRD §5.1's five fixed values, plus unset. PRD §14 settled on fixed rather than custom. */
 const COLORS = ['none', 'yellow', 'green', 'blue', 'pink', 'purple'];
@@ -378,6 +386,8 @@ async function removeClips(ids) {
   render();
 
   pendingUndo = removed;
+  // Naming the shortcut is the only way anyone learns it exists — there is nowhere else
+  // in the product it could be discovered.
   $('undo-text').textContent = removed.length === 1
     ? 'Clip removed'
     : `${removed.length} clips removed`;
