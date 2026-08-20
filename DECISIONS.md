@@ -92,6 +92,39 @@ specify five clip colours.
 Ship no colour UI in v1 — the canvas is the design of record and it has none. PRD U9 is P1,
 not P0, so this costs no committed scope.
 
+#### Amendment — 2026-08-20 — U9 built, in the canvas's language
+
+Superseded on request. Keeping the field and shipping no way to set it meant the schema
+carried a column nothing could write.
+
+**Not highlighter colours.** Five saturated marker tones on a paper-and-ink page would
+wreck it, which is presumably why the canvas omitted them. The five are ink-adjacent —
+separable side by side, quiet enough to sit in a column, closer to a coloured pencil than
+a highlighter. Defined in both themes; a colour present in one only would silently unset
+itself in the other.
+
+**Nothing new is drawn to carry them.** The colour flows into two elements that already
+exist: the timeline dot, which is the element positioned to be scanned down the left edge,
+and the rule beside a quoted passage.
+
+**Colour is never the only signal.** A coded clip's dot is also larger. Roughly one reader
+in twelve cannot separate these hues reliably, and a greyscale or printed page separates
+none of them.
+
+**Swatches are hidden until asked for.** Five permanent swatches per row would be five
+pieces of chrome per clip on a page whose argument is that the passage is the content —
+and the design was just simplified by *removing* two header controls, not by adding thirty
+per screen.
+
+**New clips are uncoloured.** `DEFAULT_COLOR` moved from `'yellow'` to `''`. A colour every
+clip carries by default is not a code: the timeline becomes a column of identical dots and
+"distinguish kinds of passage" distinguishes nothing. This extends TRD §5.1's union with
+the empty string for "not coded" — the only schema change, and additive.
+
+**No colour filter in the header**, deliberately. Search covers finding; colour covers
+scanning. Adding five dots to a header two controls were just removed from would undo that
+simplification.
+
 ### D6 — Delete is undoable
 
 The canvas deletes immediately, from both the per-row "Remove" and the bulk action. TRD §16

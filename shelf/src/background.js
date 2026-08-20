@@ -23,8 +23,14 @@ import {
 const MENU_ID = 'shelf-save-selection';
 const MENU_OPEN_ID = 'shelf-open';
 
-/** Fallback when storage.local has no defaultColor yet. TRD §5.3. */
-const DEFAULT_COLOR = 'yellow';
+/**
+ * Fallback when storage.local has no defaultColor yet. TRD §5.3.
+ *
+ * Empty, not 'yellow'. A colour every clip carries by default is not a code — the
+ * timeline would be a column of identical dots and U9's "distinguish kinds of passage"
+ * would distinguish nothing. Colour is applied deliberately or not at all.
+ */
+const DEFAULT_COLOR = '';
 
 const log = (...args) => console.debug('[shelf:sw]', ...args);
 
@@ -57,7 +63,7 @@ async function buildClip(capture) {
     id: crypto.randomUUID(),
     text: collapseWhitespace(capture.text),
     note: collapseWhitespace(capture.note ?? ''),
-    color: capture.color || (await defaultColor()),
+    color: capture.color ?? (await defaultColor()),
 
     url,
     canonicalUrl,
@@ -87,7 +93,7 @@ async function buildClip(capture) {
 async function defaultColor() {
   try {
     const { defaultColor: c } = await chrome.storage.local.get('defaultColor');
-    return c || DEFAULT_COLOR;
+    return c ?? DEFAULT_COLOR;
   } catch {
     return DEFAULT_COLOR;
   }

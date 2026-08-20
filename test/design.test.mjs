@@ -129,3 +129,42 @@ test('the shipped font family matches the canvas', () => {
   const fontsCss = readFileSync(join(EXT, 'fonts', 'fonts.css'), 'utf8');
   assert.ok(fontsCss.includes(family), `fonts.css should bundle ${family}`);
 });
+
+/* ---------------------------------------------------------------- clip colours */
+
+test('all five clip colours are defined in both themes', () => {
+  // TRD §5.1 fixes the set at five. A colour defined in light but not dark renders as
+  // an invalid custom property, which browsers treat as "unset" — the dot silently
+  // falls back to the default and the clip loses its code in dark mode only.
+  const css = readFileSync(join(EXT, 'src', 'theme.css'), 'utf8');
+  const light = css.slice(0, css.indexOf('[data-theme="dark"]'));
+  const dark = css.slice(css.indexOf('[data-theme="dark"]'));
+  for (const name of ['yellow', 'green', 'blue', 'pink', 'purple']) {
+    assert.match(light, new RegExp(`--clip-${name}:\\s*#[0-9A-Fa-f]{6}`), `light --clip-${name}`);
+    assert.match(dark, new RegExp(`--clip-${name}:\\s*#[0-9A-Fa-f]{6}`), `dark --clip-${name}`);
+  }
+});
+
+test('every clip colour has a dot rule and a passage-rule rule', () => {
+  // A token with no stylesheet rule is a colour that can be stored and never seen.
+  const css = readFileSync(join(EXT, 'src', 'shelf.css'), 'utf8');
+  for (const name of ['yellow', 'green', 'blue', 'pink', 'purple']) {
+    assert.match(css, new RegExp(`\\[data-color="${name}"\\]::before`), `${name} dot`);
+    assert.match(css, new RegExp(`\\[data-color="${name}"\\][^\\n]*\\.lead\\.passage`), `${name} rule`);
+  }
+});
+
+test('colour is never the only signal a clip is coded', () => {
+  // Roughly one reader in twelve cannot separate these hues reliably, and a printed or
+  // greyscale page separates none of them. The coloured dot is also larger.
+  const css = readFileSync(join(EXT, 'src', 'shelf.css'), 'utf8');
+  assert.match(css, /\.clip:not\(\[data-color=""\]\)::before[^}]*width:\s*9px/,
+    'a coded clip must differ in more than hue');
+});
+
+test('clips are not born with a colour', () => {
+  // A colour every clip carries by default is not a code — the timeline becomes a column
+  // of identical dots and distinguishes nothing.
+  const bg = readFileSync(join(EXT, 'src', 'background.js'), 'utf8');
+  assert.match(bg, /const DEFAULT_COLOR = '';/, 'new clips must start uncoloured');
+});

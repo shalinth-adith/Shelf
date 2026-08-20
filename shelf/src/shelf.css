@@ -299,3 +299,36 @@ footer { border-top: 1px solid var(--rule); margin-top: 44px; }
   border-color: var(--accent); background: var(--accent-soft);
 }
 .nobackup[data-level="urgent"] b { color: var(--accent); }
+
+/* ---------------------------------------------------------------- clip colour */
+
+/* The colour flows into two elements that already exist rather than adding a third:
+   the timeline dot, and the rule beside a quoted passage. */
+.clip[data-color="yellow"]::before { background: var(--clip-yellow); }
+.clip[data-color="green"]::before  { background: var(--clip-green); }
+.clip[data-color="blue"]::before   { background: var(--clip-blue); }
+.clip[data-color="pink"]::before   { background: var(--clip-pink); }
+.clip[data-color="purple"]::before { background: var(--clip-purple); }
+
+.clip[data-color="yellow"] .lead.passage { border-left-color: var(--clip-yellow); }
+.clip[data-color="green"]  .lead.passage { border-left-color: var(--clip-green); }
+.clip[data-color="blue"]   .lead.passage { border-left-color: var(--clip-blue); }
+.clip[data-color="pink"]   .lead.passage { border-left-color: var(--clip-pink); }
+.clip[data-color="purple"] .lead.passage { border-left-color: var(--clip-purple); }
+
+/* A coloured clip gets a slightly larger dot, so the timeline still reads when the
+   page is greyscale or the reader is colour-blind. Colour is never the only signal. */
+.clip:not([data-color=""])::before { width: 9px; height: 9px; top: 31px; }
+
+.swatches { display: flex; align-items: center; gap: 6px; margin-left: 2px; }
+.swatch {
+  width: 14px; height: 14px; padding: 0; cursor: pointer;
+  border-radius: 50%; border: 1px solid transparent;
+}
+.swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--ink-2); }
+.swatch[data-color="none"] { background: transparent; border-color: var(--rule); }
+.swatch[data-color="yellow"] { background: var(--clip-yellow); }
+.swatch[data-color="green"]  { background: var(--clip-green); }
+.swatch[data-color="blue"]   { background: var(--clip-blue); }
+.swatch[data-color="pink"]   { background: var(--clip-pink); }
+.swatch[data-color="purple"] { background: var(--clip-purple); }

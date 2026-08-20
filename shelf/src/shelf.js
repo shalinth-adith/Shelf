@@ -28,6 +28,9 @@ const log = (...a) => console.debug('[shelf:page]', ...a);
 /** How long a deleted clip can be restored. D6. */
 const UNDO_MS = 8000;
 
+/** TRD §5.1's five fixed values, plus unset. PRD §14 settled on fixed rather than custom. */
+const COLORS = ['none', 'yellow', 'green', 'blue', 'pink', 'purple'];
+
 const state = {
   clips: [],
   query: '',
@@ -162,6 +165,7 @@ function renderClip(clip, terms, now) {
   row.dataset.id = clip.id;
   row.dataset.selected = state.selected.has(clip.id) ? 'true' : 'false';
   row.dataset.public = clip.isPublic ? 'true' : 'false';
+  row.dataset.color = clip.color || '';
 
   // -- select
   const check = el('button', 'check', state.selected.has(clip.id) ? '✓' : '');
@@ -230,10 +234,15 @@ function renderClip(clip, terms, now) {
   copy.title = 'Copy the passage and its citation as Markdown';
   copy.addEventListener('click', () => copyMarkdown(clip, copy));
 
+  const colourBtn = el('button', null, 'Colour');
+  colourBtn.type = 'button';
+  colourBtn.title = 'Colour-code this clip';
+  colourBtn.addEventListener('click', () => toggleSwatches(actions, clip));
+
   const del = el('button', null, 'Remove');
   del.type = 'button';
   del.addEventListener('click', () => removeClips([clip.id]));
-  actions.append(noteBtn, copy, share, del);
+  actions.append(noteBtn, copy, colourBtn, share, del);
   body.append(actions);
 
   row.append(body);
@@ -405,6 +414,40 @@ async function toggleShare(clip) {
   clip.isPublic = !clip.isPublic;
   await db.putClip(clip);
   log('share', clip.id, clip.isPublic);
+  render();
+}
+
+/**
+ * Reveal the swatch row inline. PRD U9.
+ *
+ * Hidden until asked for. Five permanent swatches on every row would be five pieces of
+ * chrome per clip on a page whose whole argument is that the passage is the content —
+ * and the design was just simplified by removing two header controls, not by adding
+ * thirty more per screen.
+ */
+function toggleSwatches(actions, clip) {
+  const open = actions.querySelector('.swatches');
+  if (open) { open.remove(); return; }
+
+  const row = el('div', 'swatches');
+  for (const colour of COLORS) {
+    const value = colour === 'none' ? '' : colour;
+    const swatch = el('button', 'swatch');
+    swatch.type = 'button';
+    swatch.dataset.color = colour;
+    swatch.title = colour === 'none' ? 'No colour' : colour;
+    swatch.setAttribute('aria-label', colour === 'none' ? 'No colour' : colour);
+    swatch.setAttribute('aria-pressed', String((clip.color || '') === value));
+    swatch.addEventListener('click', () => setColour(clip, value));
+    row.append(swatch);
+  }
+  actions.append(row);
+}
+
+async function setColour(clip, colour) {
+  clip.color = colour;
+  await db.putClip(clip);
+  log('colour', clip.id, colour || 'none');
   render();
 }
 

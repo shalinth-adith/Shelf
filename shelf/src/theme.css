@@ -25,6 +25,17 @@
      token any more, deliberately, so a stray reference fails visibly rather than
      silently falling back to Times. */
   --sans: 'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Clip colours — PRD U9, TRD §5.1's five fixed values.
+     Deliberately NOT highlighter colours. This is a paper-and-ink page and five
+     saturated marker tones would wreck it, which is presumably why the canvas has
+     none. These are ink-adjacent: separable side by side, quiet enough to sit in a
+     column, closer to a coloured pencil than a highlighter. */
+  --clip-yellow: #B0862F;
+  --clip-green:  #4F7A55;
+  --clip-blue:   #3F6C91;
+  --clip-pink:   #A85379;
+  --clip-purple: #6D5595;
 }
 
 [data-theme="dark"] {
@@ -38,6 +49,12 @@
   --accent:    #E39272;
   --accent-soft: #2C1F1A;
   --warn:      #D9A867;
+
+  --clip-yellow: #E3BB68;
+  --clip-green:  #8CBB93;
+  --clip-blue:   #86ACCB;
+  --clip-pink:   #DE9AB8;
+  --clip-purple: #AB99CE;
 }
 
 html, body { margin: 0; padding: 0; background: var(--paper); }
