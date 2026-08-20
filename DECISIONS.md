@@ -100,6 +100,32 @@ check 7 requires "Delete → undo restores".
 **Decision:** the check wins. Deletion shows an undo affordance and is reversible for the
 duration of that affordance. Resolved concretely at step 6.
 
+### Amendment — 2026-08-20 — accent is terracotta, not teal
+
+Canvas revised. `--accent` moved `#1F5C5C` → `#A8462A` (light) and `#83BBB1` → `#E39272`
+(dark); `--accent-soft` moved `#E7EFED` → `#F6EAE4` and `#1D2A28` → `#2C1F1A`. Every other
+token is unchanged.
+
+Two surfaces hardcode the accent and cannot pick it up from a stylesheet: the save bar
+(closed shadow root) and the toolbar badge (a `chrome.action` call). Both updated.
+
+The save button's hover shade is **derived, not from the canvas**: `#8E3A22`, darker than
+the accent. The instinct is to lighten on hover, but paper-on-terracotta at `#C15634` is
+4.33:1 — below WCAG AA — on the one control the entire feature depends on. Darker gives
+7.24:1.
+
+`test/design.test.mjs` now reads the accent out of the canvas and fails if shipped code
+disagrees, or if any hex in the source is not traceable to a current token or a listed
+derived shade. Palette drift is otherwise invisible: the design changes everywhere except
+the two surfaces the user actually touches while saving.
+
+### Undecided — the logo
+
+`design/Shelf Logo.dc.html` is a turn-1 exploration of four marks (1a Stack, 1b Ribbon,
+1c Bracket, 1d Rule) and explicitly asks for one to be chosen before icon sizes are cut.
+Until then `shelf/icons/*.png` remain the step-1 placeholders. Not blocking any step
+before submission.
+
 ### Kept from the canvas, absent from the specs
 
 Adopted as-is, no conflict: date-range filter, Newest/Oldest/Title sort, light/dark theme

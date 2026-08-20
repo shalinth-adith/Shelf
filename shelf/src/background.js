@@ -119,7 +119,7 @@ async function saveClip(capture) {
     log('saved via', capture.source || 'unknown', '—', clip.id, clip.domain,
         'pageCount', pageCount);
 
-    flashBadge('✓', '#1F5C5C');
+    flashBadge('✓', '#A8462A');
     return { ok: true, id: clip.id, pageCount };
   } catch (err) {
     console.error('[shelf:sw] save failed', err);
@@ -312,7 +312,7 @@ chrome.action.onClicked.addListener((tab) => {
   chrome.permissions.request({ origins })
     .then((granted) => {
       log('permission request for', origins[0], granted ? 'granted' : 'denied');
-      flashBadge(granted ? '✓' : '✕', granted ? '#1F5C5C' : '#8A5A1F');
+      flashBadge(granted ? '✓' : '✕', granted ? '#A8462A' : '#8A5A1F');
       // permissions.onAdded does the registration and open-tab injection.
     })
     .catch((err) => {

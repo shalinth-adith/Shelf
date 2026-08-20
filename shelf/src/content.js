@@ -172,11 +172,14 @@
       '.label { opacity: 0.62; letter-spacing: 0.02em; }',
       '.save {',
       '  font: inherit; cursor: pointer; border: 0;',
-      '  background: #1F5C5C; color: #FBFAF7;',
+      /* Accent #A8462A on paper text is 5.63:1. Hover goes DARKER (#8E3A22,
+         7.24:1) — lightening a mid-tone terracotta drops it to 4.33:1 and
+         fails WCAG AA on the one control the whole feature depends on. */
+      '  background: #A8462A; color: #FBFAF7;',
       '  border-radius: 6px; padding: 0 12px; height: 26px;',
       '}',
-      '.save:hover { background: #2A7373; }',
-      '.saved .save { background: transparent; color: #83BBB1; cursor: default; }',
+      '.save:hover { background: #8E3A22; }',   /* darker, not lighter — see below */
+      '.saved .save { background: transparent; color: #E39272; cursor: default; }',
       '.saved .label { opacity: 0; }',
     ].join('\n');
 
