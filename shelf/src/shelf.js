@@ -410,6 +410,29 @@ function dismissUndo() {
  * also why isPublic defaults to false on every save: inclusion in an export is opt-in,
  * one clip at a time, and there is no gesture anywhere that marks everything at once.
  */
+/**
+ * Mark every selected clip for sharing.
+ *
+ * The circles and the per-row "Mark to share" link are two different selection ideas —
+ * one transient and for deleting, one persistent and for exporting — and someone who
+ * wants to share ten clips will reach for the circles first. This connects them without
+ * making selection *be* the export scope, which would make the scope vanish on reload.
+ *
+ * Marks rather than toggles: a mixed selection should end up all-marked, which is what
+ * "mark these" means. Unmarking is per row, where the consequence is visible.
+ */
+async function markSelected() {
+  const ids = [...state.selected];
+  const clips = state.clips.filter((c) => ids.includes(c.id) && !c.isPublic);
+  for (const clip of clips) {
+    clip.isPublic = true;
+    await db.putClip(clip);
+  }
+  log('marked', clips.length, 'of', ids.length, 'selected');
+  state.selected.clear();
+  render();
+}
+
 async function toggleShare(clip) {
   clip.isPublic = !clip.isPublic;
   await db.putClip(clip);
@@ -496,7 +519,8 @@ function openExport() {
 
   $('scope-marked-detail').textContent = marked.length
     ? `${phrase(marked.length)} from ${sitesOf(marked)}`
-    : 'Nothing marked yet — use "Mark to share" on a clip';
+    : 'Nothing marked yet — use "Mark to share" on a clip, '
+      + 'or select several with the circles and mark them together';
   $('scope-all-detail').textContent = `${phrase(all.length)} from ${sitesOf(all)}`;
 
   dlg.querySelector('input[value="marked"]').checked = true;
@@ -772,6 +796,7 @@ function bind() {
   });
   $('undo-btn').addEventListener('click', undo);
   $('clearsel').addEventListener('click', () => { state.selected.clear(); render(); });
+  $('marksel').addEventListener('click', markSelected);
   $('delsel').addEventListener('click', () => removeClips([...state.selected]));
 
   document.addEventListener('keydown', (e) => {
