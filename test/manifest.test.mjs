@@ -36,13 +36,29 @@ const NO_DECLARATION_NEEDED = new Set([
   'runtime', 'action', 'permissions', 'i18n', 'extension', 'test',
 ]);
 
+/**
+ * APIs we reach through HOST permissions rather than a named permission, with the
+ * reason each is deliberate. Adding one of these to manifest.permissions would be the
+ * easy fix and the wrong one — read the reason before touching this.
+ */
+const HOST_PERMISSION_GATED = {
+  tabs:
+    'chrome.tabs.query({url}) filters by URL using host permissions for those origins, ' +
+    'and we only ever query the origins the user has already granted. Declaring the ' +
+    '"tabs" permission instead would put "Read your browsing history" on the install ' +
+    'screen of a product whose entire pitch is that it reads nothing.',
+};
+
 test('manifest declares every chrome API the source actually calls', () => {
   const declared = new Set(manifest.permissions ?? []);
   const missing = new Set();
 
   for (const file of sourceFiles()) {
     for (const [, ns] of code(file).matchAll(/\bchrome\.([a-zA-Z]+)\b/g)) {
-      if (!declared.has(ns) && !NO_DECLARATION_NEEDED.has(ns)) missing.add(`${ns} (${file})`);
+      if (declared.has(ns)) continue;
+      if (NO_DECLARATION_NEEDED.has(ns)) continue;
+      if (ns in HOST_PERMISSION_GATED) continue;
+      missing.add(`${ns} (${file})`);
     }
   }
   assert.deepEqual([...missing], [], 'undeclared chrome APIs');
@@ -97,5 +113,15 @@ test('content.js, if present, is never registered as a module', () => {
   const declared = manifest.content_scripts ?? [];
   for (const entry of declared) {
     assert.notEqual(entry.type, 'module', 'content scripts must be classic');
+  }
+});
+
+test('host-permission-gated APIs stay out of manifest.permissions', () => {
+  // The failure this guards against is someone hitting the undeclared-API test above and
+  // "fixing" it by declaring the permission — which would silently add an install-time
+  // warning that contradicts the product.
+  const declared = new Set(manifest.permissions ?? []);
+  for (const [api, reason] of Object.entries(HOST_PERMISSION_GATED)) {
+    assert.ok(!declared.has(api), `"${api}" must not be declared. ${reason}`);
   }
 });

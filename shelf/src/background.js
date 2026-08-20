@@ -208,6 +208,85 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 chrome.runtime.onStartup.addListener(() => {
   log('onStartup');
   ensureContextMenu();
+  syncContentScripts();
+});
+
+/* ================================================================== *
+ * Runtime content-script registration — TRD §9
+ *
+ * The save bar only exists on origins the user has explicitly granted. Nothing is
+ * declared in the manifest, because a static content_scripts block would require
+ * host_permissions at install — the exact thing §9 forbids.
+ *
+ * Re-synced on every worker spawn and whenever permissions change, so granting a site
+ * takes effect without a browser restart.
+ * ================================================================== */
+
+const SCRIPT_ID = 'shelf-bar';
+
+async function syncContentScripts() {
+  try {
+    const { origins = [] } = await chrome.permissions.getAll();
+    const matches = origins.filter((o) => o.startsWith('http://') || o.startsWith('https://'));
+
+    // Unregister before registering, or a duplicate id throws (§9). Absent id also
+    // throws, hence the swallow — there is no "unregister if present".
+    try {
+      await chrome.scripting.unregisterContentScripts({ ids: [SCRIPT_ID] });
+    } catch {
+      /* not registered yet */
+    }
+
+    if (!matches.length) {
+      log('content scripts: no granted origins');
+      return;
+    }
+
+    await chrome.scripting.registerContentScripts([{
+      id: SCRIPT_ID,
+      js: ['src/content.js'],
+      matches,
+      runAt: 'document_idle',
+      allFrames: false,
+      world: 'ISOLATED',
+    }]);
+    log('content scripts registered for', matches.length, 'origin(s)');
+
+    await injectIntoOpenTabs(matches);
+  } catch (err) {
+    console.error('[shelf:sw] content script sync failed', err);
+  }
+}
+
+/**
+ * Registration only affects future navigations. Without this, granting a site does
+ * nothing until the user reloads — which reads as the grant having failed.
+ *
+ * content.js guards on window.__shelfLoaded, so injecting into a tab that already has
+ * it is a no-op.
+ */
+async function injectIntoOpenTabs(matches) {
+  const tabs = await chrome.tabs.query({ url: matches });
+  await Promise.all(tabs.map(async (tab) => {
+    if (!tab.id) return;
+    try {
+      await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['src/content.js'] });
+    } catch (err) {
+      // Expected on pages an extension may never touch: the web store, chrome:// pages,
+      // PDFs. Not worth failing the whole sync over.
+      log('inject skipped for tab', tab.id, String(err && err.message));
+    }
+  }));
+}
+
+chrome.permissions.onAdded.addListener((p) => {
+  log('permissions added', p.origins);
+  syncContentScripts();
+});
+
+chrome.permissions.onRemoved.addListener((p) => {
+  log('permissions removed', p.origins);
+  syncContentScripts();
 });
 
 /* ================================================================== *
@@ -284,5 +363,6 @@ globalThis.shelfSave = saveClip;
  * (§9.1) is the last thing that should depend on a lifecycle event firing.
  */
 ensureContextMenu();
+syncContentScripts();
 
 console.debug('[shelf] worker boot', new Date().toISOString());
