@@ -34,7 +34,17 @@ function code(path) {
  */
 const NO_DECLARATION_NEEDED = new Set([
   'runtime', 'action', 'permissions', 'i18n', 'extension', 'test',
+  // chrome.windows needs no permission of its own. Only the url/title/favIconUrl
+  // properties of a tab are gated, and we only ever set { focused: true }.
+  'windows',
 ]);
+
+/**
+ * APIs switched on by a top-level MANIFEST KEY rather than by a permission. Declaring
+ * these under "permissions" does nothing; omitting the key leaves the API undefined at
+ * runtime with no warning at load.
+ */
+const MANIFEST_KEY_GATED = { commands: 'commands' };
 
 /**
  * APIs we reach through HOST permissions rather than a named permission, with the
@@ -58,6 +68,7 @@ test('manifest declares every chrome API the source actually calls', () => {
       if (declared.has(ns)) continue;
       if (NO_DECLARATION_NEEDED.has(ns)) continue;
       if (ns in HOST_PERMISSION_GATED) continue;
+      if (ns in MANIFEST_KEY_GATED) continue;
       missing.add(`${ns} (${file})`);
     }
   }
@@ -166,5 +177,56 @@ test('host-permission-gated APIs stay out of manifest.permissions', () => {
   const declared = new Set(manifest.permissions ?? []);
   for (const [api, reason] of Object.entries(HOST_PERMISSION_GATED)) {
     assert.ok(!declared.has(api), `"${api}" must not be declared. ${reason}`);
+  }
+});
+
+test('manifest-key-gated APIs have their key present', () => {
+  // The failure mode this catches is silent: chrome.commands is simply undefined if the
+  // "commands" key is missing, and nothing complains at extension load.
+  for (const [api, key] of Object.entries(MANIFEST_KEY_GATED)) {
+    assert.ok(manifest[key], `chrome.${api} is used but manifest."${key}" is absent`);
+  }
+});
+
+test('the keyboard shortcut does not collide with a Chrome default', () => {
+  // Chrome silently drops a suggested_key that clashes with one of its own shortcuts,
+  // and the command then never fires — with no error anywhere.
+  const RESERVED = new Set([
+    'Ctrl+Shift+T', 'Ctrl+Shift+N', 'Ctrl+Shift+W', 'Ctrl+Shift+Q',
+    'Ctrl+Shift+J', 'Ctrl+Shift+I', 'Ctrl+Shift+C', 'Ctrl+Shift+B',
+    'Ctrl+Shift+O', 'Ctrl+Shift+D', 'Ctrl+Shift+P', 'Ctrl+Shift+M',
+  ]);
+  for (const [name, def] of Object.entries(manifest.commands ?? {})) {
+    for (const key of Object.values(def.suggested_key ?? {})) {
+      const normalised = key.replace(/^Command\+/, 'Ctrl+').replace(/^MacCtrl\+/, 'Ctrl+');
+      assert.ok(!RESERVED.has(normalised), `${name} uses reserved shortcut ${key}`);
+    }
+  }
+});
+
+test('no shipped script assigns HTML from a string', () => {
+  // Every string rendered on the shelf came off a web page — passage text, titles,
+  // domains. Building DOM nodes means there is no escaping step to forget. innerHTML
+  // on this page would be an XSS hole in the one document that can read the whole
+  // library, and it would look completely ordinary in review.
+  for (const file of sourceFiles()) {
+    assert.doesNotMatch(
+      code(file),
+      /\.(innerHTML|outerHTML)\s*=|insertAdjacentHTML|document\.write/,
+      `HTML-from-string in ${file}`
+    );
+  }
+});
+
+test('extension pages load only local scripts and styles', () => {
+  for (const file of assetFiles().filter((f) => extname(f) === '.html')) {
+    const html = readFileSync(file, 'utf8');
+    for (const [, ref] of html.matchAll(/(?:src|href)="([^"]+)"/g)) {
+      assert.ok(!/^https?:/.test(ref), `${file} loads remote ${ref}`);
+    }
+    // MV3 forbids inline script anyway; assert it so the failure is a test, not a
+    // blank page with a CSP violation in a console nobody has open.
+    assert.doesNotMatch(html, /<script(?![^>]*\bsrc=)[^>]*>[\s\S]*?\S[\s\S]*?<\/script>/,
+      `${file} contains inline script`);
   }
 });

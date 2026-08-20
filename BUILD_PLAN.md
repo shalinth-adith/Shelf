@@ -23,7 +23,7 @@ that was supposed to catch it being wrong.
 | — | Safari quota probe | ⤵ deferred to step 10 (see note) |
 | 4 | `background.js` | ✅ context menu saved on non-granted youtube.com |
 | 5 | `content.js` | ✅ bar renders and saves on medium.com |
-| 6 | `shelf.js` | ▶ next |
+| 6 | `shelf.js` | ⏳ awaiting acceptance check |
 | 7 | `export.js` | — |
 | 8 | Backup | — |
 | 9 | Popup + onboarding | — |

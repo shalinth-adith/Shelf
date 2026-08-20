@@ -1,0 +1,50 @@
+/**
+ * Shelf — design tokens. Taken from design/Shelf Library.dc.html.
+ *
+ * These are the single source for colour in every extension page. Two surfaces cannot
+ * use them and hardcode instead: the save bar (closed shadow root, unreachable from
+ * here) and the toolbar badge (a chrome.action call). test/design.test.mjs keeps those
+ * two in step with this file.
+ */
+
+@import url('../fonts/fonts.css');
+
+:root {
+  --paper:     #FBFAF7;
+  --sheet:     #FFFFFF;
+  --ink:       #1B1A17;
+  --ink-2:     #4A4841;
+  --muted:     #8A867B;
+  --rule:      #E6E2D8;
+  --rule-soft: #EFEBE2;
+  --accent:    #A8462A;
+  --accent-soft: #F6EAE4;
+  --warn:      #8A5A1F;
+
+  --serif: Lora, Georgia, 'Times New Roman', serif;
+  --sans:  Karla, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+[data-theme="dark"] {
+  --paper:     #131615;
+  --sheet:     #191D1C;
+  --ink:       #ECE9E1;
+  --ink-2:     #C3C0B7;
+  --muted:     #8B928E;
+  --rule:      #282D2B;
+  --rule-soft: #222725;
+  --accent:    #E39272;
+  --accent-soft: #2C1F1A;
+  --warn:      #D9A867;
+}
+
+html, body { margin: 0; padding: 0; background: var(--paper); }
+* { box-sizing: border-box; }
+input, button, textarea { font: inherit; color: inherit; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+::selection { background: var(--accent-soft); }
+
+/* Visible focus everywhere. The shelf is meant to be usable without a mouse (PRD U12),
+   and the default outline disappears against --paper on several of these controls. */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }

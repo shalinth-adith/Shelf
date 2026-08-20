@@ -1,0 +1,236 @@
+/**
+ * Shelf — the library page. Layout and type follow design/Shelf Library.dc.html.
+ *
+ * The canvas is written as inline styles on a mock; this is the same design expressed as
+ * a stylesheet, because extension pages run under CSP and the real page has state the
+ * mock did not (selection, search marks, note editing, undo).
+ */
+
+body {
+  font-family: var(--sans);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+.wrap { max-width: 1080px; margin: 0 auto; padding-left: 40px; padding-right: 40px; }
+
+/* ---------------------------------------------------------------- header */
+
+header {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+}
+
+.brand { display: flex; align-items: baseline; gap: 20px; padding-top: 22px; }
+.wordmark { font-family: var(--serif); font-size: 23px; font-weight: 600; letter-spacing: -0.01em; }
+.local {
+  font-size: 12px; color: var(--muted);
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.spacer { flex: 1; }
+
+.icon-btn {
+  background: none; border: 1px solid var(--rule);
+  width: 30px; height: 30px; border-radius: 50%;
+  cursor: pointer; color: var(--muted); font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+}
+.icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---------------------------------------------------------------- controls */
+
+.controls {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 14px 0 16px;
+}
+
+.search {
+  display: flex; align-items: center; gap: 9px;
+  flex: 1; min-width: 260px;
+  border-bottom: 1px solid var(--rule);
+  padding: 6px 2px;
+}
+.search:focus-within { border-bottom-color: var(--accent); }
+.search span { color: var(--muted); font-size: 14px; }
+.search input {
+  flex: 1; background: none; border: none; outline: none;
+  font-size: 15px; padding: 2px 0; color: var(--ink);
+}
+
+.dates { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted); }
+.dates input {
+  background: none; border: 1px solid var(--rule); border-radius: 5px;
+  padding: 5px 8px; font-size: 13px; color: var(--ink-2);
+}
+
+.sort { display: flex; align-items: center; gap: 2px; border: 1px solid var(--rule); border-radius: 6px; padding: 2px; }
+.sort button {
+  border: none; background: none; color: var(--muted);
+  padding: 5px 10px; font-size: 13px; border-radius: 4px; cursor: pointer;
+}
+.sort button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+
+/* ---------------------------------------------------------------- page head */
+
+main { padding-top: 34px; padding-bottom: 120px; }
+
+.pagehead {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 20px; padding-bottom: 26px;
+}
+h1 {
+  font-family: var(--serif); font-size: 31px; font-weight: 500;
+  margin: 0 0 6px; letter-spacing: -0.015em;
+}
+.summary { margin: 0; font-size: 14px; color: var(--muted); }
+
+.selbar {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--accent-soft); border-radius: 8px; padding: 8px 8px 8px 14px;
+}
+.selbar span { font-size: 13px; color: var(--accent); }
+.selbar .danger {
+  background: var(--accent); border: none; color: var(--paper);
+  padding: 6px 12px; border-radius: 5px; font-size: 13px; cursor: pointer;
+}
+.selbar .plain { background: none; border: none; color: var(--accent); font-size: 13px; cursor: pointer; padding: 6px 4px; }
+
+/* ---------------------------------------------------------------- groups */
+
+.group {
+  display: grid; grid-template-columns: 170px 1fr; gap: 34px;
+  align-items: start; padding-bottom: 8px;
+}
+.daycol { position: sticky; top: 132px; padding-top: 22px; }
+.weekday, .date { font-family: var(--serif); font-size: 17px; line-height: 1.35; }
+.weekday { color: var(--ink); }
+.date { color: var(--muted); }
+.daycount {
+  margin-top: 8px; font-size: 12px; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--muted);
+}
+
+/* The continuous timeline down the left. Each clip pins to it with a dot. */
+.items { border-left: 1px solid var(--rule); display: flex; flex-direction: column; }
+
+/* ---------------------------------------------------------------- a clip */
+
+.clip {
+  position: relative;
+  display: grid; grid-template-columns: 26px 1fr auto; gap: 18px;
+  padding: 22px 4px 24px 22px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.clip::before {
+  content: ''; position: absolute; left: -4px; top: 32px;
+  width: 7px; height: 7px; border-radius: 50%; background: var(--rule);
+}
+.clip[data-selected="true"]::before { background: var(--accent); }
+
+.check {
+  width: 19px; height: 19px; margin-top: 3px;
+  border-radius: 50%; border: 1px solid var(--rule); background: transparent;
+  color: var(--paper); font-size: 11px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; padding: 0;
+}
+.clip[data-selected="true"] .check { background: var(--accent); border-color: var(--accent); }
+
+.body { min-width: 0; }
+
+.meta {
+  display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+  font-size: 12.5px; color: var(--muted); padding-bottom: 7px;
+}
+.meta .dom { color: var(--ink-2); }
+.avatar {
+  width: 15px; height: 15px; border-radius: 3px;
+  background: var(--accent-soft); color: var(--accent);
+  font-family: var(--serif); font-size: 10px;
+  display: flex; align-items: center; justify-content: center; flex: none;
+}
+
+/* The row's lead element. D3: the passage when there is one, the title when there
+   is not. Same size and weight either way, so the row's rhythm never changes. */
+.lead {
+  font-family: var(--serif); font-size: 20px; line-height: 1.35; font-weight: 500;
+  color: var(--ink); display: block; letter-spacing: -0.01em; text-wrap: pretty;
+}
+.lead:hover { color: var(--accent); }
+/* A passage is a quotation, so it gets the quotation's rule — but at lead size, not
+   demoted the way the canvas draws it. */
+.lead.passage { padding-left: 14px; border-left: 2px solid var(--accent-soft); font-style: italic; }
+
+/* Title shown underneath when the passage leads. */
+.subtitle { margin-top: 10px; font-size: 13.5px; color: var(--ink-2); display: block; }
+.subtitle:hover { color: var(--accent); }
+
+.note { margin-top: 12px; display: flex; gap: 9px; align-items: baseline; }
+.note-label {
+  font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--accent); flex: none; padding-top: 2px;
+}
+.note-text { font-size: 14px; line-height: 1.55; color: var(--ink-2); text-wrap: pretty; cursor: text; }
+.note-edit {
+  width: 100%; resize: vertical; min-height: 58px;
+  background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px;
+  padding: 9px 10px; font-size: 13.5px; line-height: 1.5; outline: none; color: var(--ink);
+}
+.note-edit:focus { border-color: var(--accent); }
+
+.actions { margin-top: 14px; display: flex; gap: 14px; }
+.actions button {
+  background: none; border: none; padding: 0;
+  font-size: 12.5px; color: var(--muted); cursor: pointer; opacity: 0.75;
+}
+.actions button:hover { color: var(--accent); opacity: 1; }
+
+/* Letter avatar card. D2 — never an image, never a fetched favicon. */
+.card {
+  width: 132px; height: 88px;
+  border: 1px solid var(--rule); border-radius: 4px; background: var(--sheet);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif); font-size: 26px; color: var(--rule);
+}
+
+mark { background: var(--accent-soft); color: var(--accent); border-radius: 2px; padding: 0 1px; }
+
+/* ---------------------------------------------------------------- states */
+
+.empty {
+  border: 1px dashed var(--rule); border-radius: 8px;
+  padding: 56px 40px; text-align: center;
+}
+.empty h2 { font-family: var(--serif); font-size: 19px; margin: 0 0 8px; color: var(--ink); font-weight: 500; }
+.empty p { margin: 0; font-size: 14px; color: var(--muted); }
+
+footer { padding-top: 44px; font-size: 12.5px; color: var(--muted); line-height: 1.7; }
+
+/* Undo. D6 — deletion is reversible for as long as this is on screen. */
+.undo {
+  position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 14px;
+  background: var(--ink); color: var(--paper);
+  border-radius: 8px; padding: 11px 12px 11px 16px; font-size: 13.5px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.22);
+  z-index: 40;
+}
+.undo button {
+  background: none; border: 1px solid rgba(255,255,255,0.25); color: var(--paper);
+  border-radius: 5px; padding: 5px 11px; font-size: 13px; cursor: pointer;
+}
+.undo button:hover { border-color: var(--paper); }
+.undo[hidden] { display: none; }
+
+/* ---------------------------------------------------------------- narrow */
+
+@media (max-width: 720px) {
+  .wrap { padding-left: 20px; padding-right: 20px; }
+  .group { grid-template-columns: 1fr; gap: 10px; }
+  .daycol { position: static; padding-top: 18px; }
+  .items { border-left: none; }
+  .clip { padding-left: 0; grid-template-columns: 26px 1fr; }
+  .clip::before { display: none; }
+  .card { display: none; }
+}

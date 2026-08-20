@@ -21,6 +21,7 @@ import {
 } from './util.js';
 
 const MENU_ID = 'shelf-save-selection';
+const MENU_OPEN_ID = 'shelf-open';
 
 /** Fallback when storage.local has no defaultColor yet. TRD §5.3. */
 const DEFAULT_COLOR = 'yellow';
@@ -175,6 +176,14 @@ async function installContextMenu() {
       title: 'Save selection to Shelf',
       contexts: ['selection'],
     });
+    // On the toolbar icon itself. Left-click currently requests site access (see
+    // action.onClicked), so the shelf needs its own way in until step 9's popup gives
+    // it a proper button.
+    await chrome.contextMenus.create({
+      id: MENU_OPEN_ID,
+      title: 'Open shelf',
+      contexts: ['action'],
+    });
     log('context menu installed');
   } catch (err) {
     menuReady = null;               // let the next caller retry
@@ -183,6 +192,10 @@ async function installContextMenu() {
 }
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId === MENU_OPEN_ID) {
+    openShelf();
+    return;
+  }
   if (info.menuItemId !== MENU_ID) return;
   saveClip({
     source: 'context-menu',
@@ -191,6 +204,34 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     url: info.pageUrl ?? tab?.url ?? '',
     title: tab?.title ?? '',
   });
+});
+
+/* ================================================================== *
+ * Opening the shelf
+ * ================================================================== */
+
+/**
+ * Focus the shelf if it is already open, otherwise open it.
+ *
+ * Without the reuse check, every invocation leaves another copy behind — and since the
+ * page holds the whole library in memory, duplicates are both untidy and wasteful.
+ */
+async function openShelf() {
+  const url = chrome.runtime.getURL('src/shelf.html');
+  const [existing] = await chrome.tabs.query({ url });
+  if (existing?.id) {
+    await chrome.tabs.update(existing.id, { active: true });
+    if (existing.windowId) await chrome.windows.update(existing.windowId, { focused: true });
+    log('shelf focused');
+    return;
+  }
+  await chrome.tabs.create({ url });
+  log('shelf opened');
+}
+
+chrome.commands.onCommand.addListener((command) => {
+  log('command', command);
+  if (command === 'open-shelf') openShelf();
 });
 
 /* ================================================================== *
@@ -300,8 +341,9 @@ chrome.action.onClicked.addListener((tab) => {
   const origins = originPatternFor(tab && tab.url);
   if (!origins) {
     // chrome://, about:, the Web Store, PDFs — pages no extension may ever touch.
-    log('cannot request access for', tab && tab.url);
-    flashBadge('—', '#8A5A1F');
+    // Nothing to grant here, so make the click do the other useful thing.
+    log('no grantable origin for', tab && tab.url, '— opening shelf');
+    openShelf();
     return;
   }
 

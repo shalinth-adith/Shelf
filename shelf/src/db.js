@@ -220,6 +220,51 @@ export async function countByUrlHash(hash) {
   return n;
 }
 
+/**
+ * Every clip, newest first.
+ *
+ * Reads through the savedAt index in reverse rather than getAll()+sort, so the store
+ * does the ordering. At ~500 bytes per clip (D2 keeps it there) the whole library is a
+ * couple of megabytes at 5,000 clips, which is what TRD §11 relies on when it says
+ * search can be a linear scan over an in-memory array.
+ *
+ * @returns {Promise<object[]>}
+ */
+export async function getAllClips() {
+  const out = await withDb(CLIPS, 'readonly', (tx) => new Promise((resolve, reject) => {
+    const clips = [];
+    const req = tx.objectStore(CLIPS).index('savedAt').openCursor(null, 'prev');
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (!cursor) return resolve(clips);
+      clips.push(cursor.value);
+      cursor.continue();
+    };
+    req.onerror = () => reject(req.error);
+  }));
+  log('getAllClips', out.length);
+  return out;
+}
+
+/**
+ * Overwrite a clip. Used for note edits and for restoring an undone delete.
+ *
+ * put, not add — unlike addClip this one is meant to replace.
+ * @param {object} clip
+ */
+export function putClip(clip) {
+  log('putClip', clip?.id);
+  return withDb(CLIPS, 'readwrite', (tx) => request(tx.objectStore(CLIPS).put(clip)));
+}
+
+/**
+ * @param {string} id
+ */
+export function deleteClip(id) {
+  log('deleteClip', id);
+  return withDb(CLIPS, 'readwrite', (tx) => request(tx.objectStore(CLIPS).delete(id)));
+}
+
 /* ------------------------------------------------------------------ *
  * meta
  * ------------------------------------------------------------------ */

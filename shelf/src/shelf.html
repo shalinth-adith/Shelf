@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shelf</title>
+  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="shelf.css">
+</head>
+<body>
+
+<header>
+  <div class="wrap brand">
+    <span class="wordmark">Shelf</span>
+    <span class="local">local only</span>
+    <span class="spacer"></span>
+    <button id="theme" class="icon-btn" type="button" title="Toggle theme" aria-label="Toggle theme">☀</button>
+  </div>
+
+  <div class="wrap controls">
+    <label class="search">
+      <span aria-hidden="true">⌕</span>
+      <input id="q" type="search" placeholder="Search passages, notes, sites" aria-label="Search clips" autocomplete="off">
+    </label>
+
+    <div class="dates">
+      <input id="from" type="date" aria-label="From date">
+      <span>to</span>
+      <input id="to" type="date" aria-label="To date">
+    </div>
+
+    <div class="sort" role="group" aria-label="Sort order">
+      <button type="button" data-sort="newest" aria-pressed="true">Newest</button>
+      <button type="button" data-sort="oldest" aria-pressed="false">Oldest</button>
+      <button type="button" data-sort="title"  aria-pressed="false">Title</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="pagehead">
+    <div>
+      <h1>Saved</h1>
+      <p class="summary" id="summary">Loading…</p>
+    </div>
+    <div class="selbar" id="selbar" hidden>
+      <span id="selcount"></span>
+      <button class="danger" id="delsel" type="button">Delete</button>
+      <button class="plain" id="clearsel" type="button">Clear</button>
+    </div>
+  </div>
+
+  <div id="groups"></div>
+
+  <div class="empty" id="empty" hidden>
+    <h2 id="empty-title">Nothing here yet</h2>
+    <p id="empty-body">Select text on any page and save it. It will appear here.</p>
+  </div>
+
+  <footer>
+    Everything on this page lives in this browser only. No account, no sync, no server.
+  </footer>
+</main>
+
+<div class="undo" id="undo" hidden role="status">
+  <span id="undo-text"></span>
+  <button id="undo-btn" type="button">Undo</button>
+</div>
+
+<script type="module" src="shelf.js"></script>
+</body>
+</html>
