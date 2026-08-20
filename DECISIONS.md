@@ -119,12 +119,25 @@ disagrees, or if any hex in the source is not traceable to a current token or a 
 derived shade. Palette drift is otherwise invisible: the design changes everywhere except
 the two surfaces the user actually touches while saving.
 
-### Undecided — the logo
+### Amendment — 2026-08-20 — logo is mark 1a "Stack"
 
-`design/Shelf Logo.dc.html` is a turn-1 exploration of four marks (1a Stack, 1b Ribbon,
-1c Bracket, 1d Rule) and explicitly asks for one to be chosen before icon sizes are cut.
-Until then `shelf/icons/*.png` remain the step-1 placeholders. Not blocking any step
-before submission.
+Chosen from the four in `design/Shelf Logo.dc.html`. Three rounded bars of descending
+width, the top one in accent — "shelved lines, one just saved". It reads at 16px better
+than the alternatives because it is pure horizontal mass with no enclosing shape stealing
+pixels, and its meaning is the product's actual verb.
+
+Icons are cut from that SVG geometry verbatim, **including the canvas's per-size optical
+adjustments**: as the mark shrinks the bars get thicker and wider and the corner radius
+grows (16px uses 8-unit bars at rx 4; 128px uses 6-unit bars at rx 3). Scaling one
+drawing down instead would thin the bars into mush at toolbar size.
+
+**Treatment is the dark tile, not the bare mark.** The canvas presents both; the tile is
+the 52px rounded square in each card's footer. A toolbar icon sits on light *and* dark
+browser chrome, and the two muted bars are near-black at 16–22% opacity — on a dark
+toolbar the bare mark would show one terracotta bar and nothing else. The tile uses
+`--dark` #131615 with `--dark-accent` #E39272, so the whole mark survives any background.
+
+Verified at 16px pixel by pixel: three distinct bars, 1px gaps, widths 12/9/6.
 
 ### Kept from the canvas, absent from the specs
 
