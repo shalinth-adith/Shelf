@@ -279,6 +279,59 @@ async function injectIntoOpenTabs(matches) {
   }));
 }
 
+/**
+ * Toolbar click → request access to the current site.
+ *
+ * TEMPORARY. Step 9's popup owns this properly, with per-site state and the count of
+ * clips from this page. It exists now because TRD §18 has an ordering gap: step 5 builds
+ * the save bar, the bar needs a granted origin, and nothing before step 9 can grant one.
+ * chrome.permissions.request() requires a user gesture, and a devtools console is not
+ * one — so the gesture has to come from extension UI. A toolbar click is the smallest
+ * piece of UI that qualifies.
+ *
+ * Only fires while the action has no default_popup. Adding one at step 9 disables this
+ * listener automatically, which is the intended handover.
+ */
+chrome.action.onClicked.addListener((tab) => {
+  const origins = originPatternFor(tab && tab.url);
+  if (!origins) {
+    // chrome://, about:, the Web Store, PDFs — pages no extension may ever touch.
+    log('cannot request access for', tab && tab.url);
+    flashBadge('—', '#8A5A1F');
+    return;
+  }
+
+  // NO await before request(). User activation expires across an await, and the call
+  // then rejects with "must be called during a user gesture" — a genuinely confusing
+  // failure, because the code looks correct. Already-granted origins resolve true
+  // immediately without prompting, so checking first buys nothing anyway.
+  chrome.permissions.request({ origins })
+    .then((granted) => {
+      log('permission request for', origins[0], granted ? 'granted' : 'denied');
+      flashBadge(granted ? '✓' : '✕', granted ? '#1F5C5C' : '#8A5A1F');
+      // permissions.onAdded does the registration and open-tab injection.
+    })
+    .catch((err) => {
+      console.error('[shelf:sw] permission request failed', err);
+      flashBadge('!', '#8A5A1F');
+    });
+});
+
+/**
+ * Match pattern for a URL's origin, or null if the page is one extensions cannot access.
+ * @param {string|undefined} url
+ * @returns {string[]|null}
+ */
+function originPatternFor(url) {
+  try {
+    const u = new URL(String(url));
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+    return [u.origin + '/*'];
+  } catch {
+    return null;
+  }
+}
+
 chrome.permissions.onAdded.addListener((p) => {
   log('permissions added', p.origins);
   syncContentScripts();
