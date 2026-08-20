@@ -29,6 +29,8 @@
       <input id="to" type="date" aria-label="To date">
     </div>
 
+    <button id="export" class="ghost-btn" type="button">Export…</button>
+
     <div class="sort" role="group" aria-label="Sort order">
       <button type="button" data-sort="newest" aria-pressed="true">Newest</button>
       <button type="button" data-sort="oldest" aria-pressed="false">Oldest</button>
@@ -61,6 +63,33 @@
     Everything on this page lives in this browser only. No account, no sync, no server.
   </footer>
 </main>
+
+<dialog id="exportdlg">
+  <form method="dialog" class="dlg">
+    <h2>Export as a web page</h2>
+    <p class="dlg-sub">One self-contained HTML file. No network requests, opens from disk.</p>
+
+    <label class="scope">
+      <input type="radio" name="scope" value="marked" checked>
+      <span><b id="scope-marked-label">Marked to share</b><em id="scope-marked-detail"></em></span>
+    </label>
+
+    <label class="scope">
+      <input type="radio" name="scope" value="all">
+      <span><b>Everything</b><em id="scope-all-detail"></em></span>
+    </label>
+
+    <div class="warn" id="scope-warn" hidden>
+      <b>This publishes your whole reading history.</b>
+      <span id="tally"></span>
+    </div>
+
+    <div class="dlg-actions">
+      <button value="cancel" class="plain" type="submit">Cancel</button>
+      <button value="go" id="dlg-go" class="danger" type="submit">Export</button>
+    </div>
+  </form>
+</dialog>
 
 <div class="undo" id="undo" hidden role="status">
   <span id="undo-text"></span>

@@ -11,6 +11,7 @@
  */
 
 import * as db from './db.js';
+import { buildExportHtml, domainTally } from './export.js';
 import {
   dayKey, dayHeading, clockTime, relativeTime, fullTimestamp,
   domainInitial, collapseWhitespace,
@@ -165,6 +166,7 @@ function renderClip(clip, terms, now) {
   const row = el('article', 'clip');
   row.dataset.id = clip.id;
   row.dataset.selected = state.selected.has(clip.id) ? 'true' : 'false';
+  row.dataset.public = clip.isPublic ? 'true' : 'false';
 
   // -- select
   const check = el('button', 'check', state.selected.has(clip.id) ? '✓' : '');
@@ -222,10 +224,16 @@ function renderClip(clip, terms, now) {
   const noteBtn = el('button', null, clip.note ? 'Edit note' : 'Add a note');
   noteBtn.type = 'button';
   noteBtn.addEventListener('click', () => editNote(row, clip));
+  const share = el('button', null, clip.isPublic ? '✓ Shared' : 'Mark to share');
+  share.type = 'button';
+  share.dataset.on = String(Boolean(clip.isPublic));
+  share.title = 'Include this clip when exporting a web page';
+  share.addEventListener('click', () => toggleShare(clip));
+
   const del = el('button', null, 'Remove');
   del.type = 'button';
   del.addEventListener('click', () => removeClips([clip.id]));
-  actions.append(noteBtn, del);
+  actions.append(noteBtn, share, del);
   body.append(actions);
 
   row.append(body);
@@ -393,6 +401,94 @@ function dismissUndo() {
   $('undo').hidden = true;
 }
 
+/**
+ * Flip a clip's share flag. PRD §8.4 — "mark clips to share individually, then export."
+ *
+ * Persisted rather than transient, so a shareable set can be built up over days. It is
+ * also why isPublic defaults to false on every save: inclusion in an export is opt-in,
+ * one clip at a time, and there is no gesture anywhere that marks everything at once.
+ */
+async function toggleShare(clip) {
+  clip.isPublic = !clip.isPublic;
+  await db.putClip(clip);
+  log('share', clip.id, clip.isPublic);
+  render();
+}
+
+/* ================================================================== *
+ * Export — TRD §12, PRD §8.4
+ *
+ * PRD calls an accidentally published reading history the worst outcome available in
+ * this product, and calls the confirmation a safety mechanism rather than a formality.
+ * Three things enforce that here:
+ *   - "Marked to share" is preselected, always. Full-corpus is never the default.
+ *   - Choosing everything reveals a count and a per-site tally BEFORE the export runs,
+ *     so the domains are visible at the moment of the decision.
+ *   - Marked-with-nothing-marked disables the button instead of quietly exporting zero.
+ * ================================================================== */
+
+function openExport() {
+  const dlg = $('exportdlg');
+  const marked = state.clips.filter((c) => c.isPublic);
+  const all = state.clips;
+
+  const phrase = (n) => `${n} ${n === 1 ? 'passage' : 'passages'}`;
+  const sitesOf = (list) => {
+    const n = domainTally(list).length;
+    return `${n} ${n === 1 ? 'site' : 'sites'}`;
+  };
+
+  $('scope-marked-detail').textContent = marked.length
+    ? `${phrase(marked.length)} from ${sitesOf(marked)}`
+    : 'Nothing marked yet — use "Mark to share" on a clip';
+  $('scope-all-detail').textContent = `${phrase(all.length)} from ${sitesOf(all)}`;
+
+  dlg.querySelector('input[value="marked"]').checked = true;
+  updateScope();
+  dlg.showModal();
+}
+
+function currentScope() {
+  return $('exportdlg').querySelector('input[name="scope"]:checked')?.value ?? 'marked';
+}
+
+function updateScope() {
+  const scope = currentScope();
+  const list = scope === 'all' ? state.clips : state.clips.filter((c) => c.isPublic);
+
+  const warn = $('scope-warn');
+  warn.hidden = scope !== 'all';
+  if (scope === 'all') {
+    // The tally is the point. A bare count says "142 clips"; the domains are what tell
+    // someone they are about to publish where they have been reading.
+    const tally = domainTally(list);
+    const shown = tally.slice(0, 8).map(([d, n]) => `${d} (${n})`).join(', ');
+    const rest = tally.length > 8 ? `, and ${tally.length - 8} more` : '';
+    $('tally').textContent = tally.length
+      ? `${list.length} passages from ${tally.length} sites: ${shown}${rest}.`
+      : 'Nothing to export.';
+  }
+  $('dlg-go').disabled = list.length === 0;
+}
+
+function runExport() {
+  const scope = currentScope();
+  const list = scope === 'all' ? state.clips : state.clips.filter((c) => c.isPublic);
+  if (!list.length) return;
+
+  const html = buildExportHtml(list, { title: 'Shelf' });
+  // A Blob URL, not a data: URL — a data: URL of a large library can exceed what the
+  // browser will accept in an href, and fails by doing nothing.
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = scope === 'all' ? 'shelf-everything.html' : 'shelf.html';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  log('exported', list.length, 'clips, scope', scope);
+}
+
 /* ================================================================== *
  * Theme
  * ================================================================== */
@@ -438,6 +534,13 @@ function bind() {
   }
 
   $('theme').addEventListener('click', toggleTheme);
+  $('export').addEventListener('click', openExport);
+  for (const radio of $('exportdlg').querySelectorAll('input[name="scope"]')) {
+    radio.addEventListener('change', updateScope);
+  }
+  $('exportdlg').addEventListener('close', () => {
+    if ($('exportdlg').returnValue === 'go') runExport();
+  });
   $('undo-btn').addEventListener('click', undo);
   $('clearsel').addEventListener('click', () => { state.selected.clear(); render(); });
   $('delsel').addEventListener('click', () => removeClips([...state.selected]));
