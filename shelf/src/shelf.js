@@ -13,14 +13,29 @@
 import * as db from './db.js';
 import { buildExportHtml, domainTally } from './export.js';
 import {
-  BACKUP_INTERVAL_MS, NAG_AFTER_MS, BACKUP_FILENAME, BACKUP_HTML_FILENAME,
-  buildBackupJson, parseBackupJson,
-  supportsDirectoryBackup, pickBackupDirectory, hasWriteAccess, writeBackup, downloadJson,
+  BACKUP_INTERVAL_MS,
+  NAG_AFTER_MS,
+  BACKUP_FILENAME,
+  BACKUP_HTML_FILENAME,
+  buildBackupJson,
+  parseBackupJson,
+  supportsDirectoryBackup,
+  pickBackupDirectory,
+  hasWriteAccess,
+  writeBackup,
+  downloadJson,
   looksLikeAFilename,
 } from './backup.js';
 import {
-  dayKey, dayHeading, clockTime, relativeTime, relativePhrase, fullTimestamp,
-  domainInitial, collapseWhitespace, toMarkdown,
+  dayKey,
+  dayHeading,
+  clockTime,
+  relativeTime,
+  relativePhrase,
+  fullTimestamp,
+  domainInitial,
+  collapseWhitespace,
+  toMarkdown,
 } from './util.js';
 
 const log = (...a) => console.debug('[shelf:page]', ...a);
@@ -100,7 +115,7 @@ function hasPassage(clip) {
 }
 
 function leadText(clip) {
-  return hasPassage(clip) ? clip.text : (clip.title || clip.domain || clip.url);
+  return hasPassage(clip) ? clip.text : clip.title || clip.domain || clip.url;
 }
 
 /* ================================================================== *
@@ -192,7 +207,7 @@ function renderClip(clip, terms, now) {
   dom.append(marked(clip.domain || 'local', terms));
   meta.append(dom, el('span', null, '·'));
   const time = el('span', null, timeLabel(clip.savedAt, now));
-  time.title = fullTimestamp(clip.savedAt);   // "when did I read this" always answerable
+  time.title = fullTimestamp(clip.savedAt); // "when did I read this" always answerable
   meta.append(time);
   body.append(meta);
 
@@ -200,7 +215,7 @@ function renderClip(clip, terms, now) {
   const lead = el('a', hasPassage(clip) ? 'lead passage' : 'lead');
   lead.href = clip.url;
   lead.target = '_blank';
-  lead.rel = 'noreferrer';                    // no referrer leaves this machine
+  lead.rel = 'noreferrer'; // no referrer leaves this machine
   lead.append(marked(leadText(clip), terms));
   body.append(lead);
 
@@ -295,8 +310,14 @@ function editNote(row, clip) {
 
   area.addEventListener('blur', () => commit(true));
   area.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { e.preventDefault(); commit(false); }
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); commit(true); }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      commit(false);
+    }
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      commit(true);
+    }
   });
 }
 
@@ -325,7 +346,9 @@ function render() {
 
     const { weekday, date } = dayHeading(clips[0].savedAt);
     col.append(el('div', 'weekday', weekday), el('div', 'date', date));
-    col.append(el('div', 'daycount', `${clips.length} ${clips.length === 1 ? 'save' : 'saves'}`));
+    col.append(
+      el('div', 'daycount', `${clips.length} ${clips.length === 1 ? 'save' : 'saves'}`)
+    );
 
     const items = el('div', 'items');
     for (const clip of clips) items.append(renderClip(clip, terms, now));
@@ -338,9 +361,10 @@ function render() {
   // -- summary and states
   const sites = new Set(state.clips.map((c) => c.domain).filter(Boolean)).size;
   const shown = list.length;
-  $('summary').textContent = state.clips.length === 0
-    ? 'Nothing saved yet'
-    : `${shown} ${shown === 1 ? 'save' : 'saves'} · ${sites} ${sites === 1 ? 'site' : 'sites'} · kept in this browser`;
+  $('summary').textContent =
+    state.clips.length === 0
+      ? 'Nothing saved yet'
+      : `${shown} ${shown === 1 ? 'save' : 'saves'} · ${sites} ${sites === 1 ? 'site' : 'sites'} · kept in this browser`;
 
   const filtering = Boolean(state.query);
   $('empty').hidden = shown !== 0;
@@ -388,9 +412,8 @@ async function removeClips(ids) {
   pendingUndo = removed;
   // Naming the shortcut is the only way anyone learns it exists — there is nowhere else
   // in the product it could be discovered.
-  $('undo-text').textContent = removed.length === 1
-    ? 'Clip removed'
-    : `${removed.length} clips removed`;
+  $('undo-text').textContent =
+    removed.length === 1 ? 'Clip removed' : `${removed.length} clips removed`;
   $('undo').hidden = false;
 
   clearTimeout(undoTimer);
@@ -460,7 +483,10 @@ async function toggleShare(clip) {
  */
 function toggleSwatches(actions, clip) {
   const open = actions.querySelector('.swatches');
-  if (open) { open.remove(); return; }
+  if (open) {
+    open.remove();
+    return;
+  }
 
   const row = el('div', 'swatches');
   for (const colour of COLORS) {
@@ -501,7 +527,9 @@ async function copyMarkdown(clip, button) {
     console.error('[shelf:page] copy failed', err);
     button.textContent = 'Copy failed';
   }
-  setTimeout(() => { button.textContent = label; }, 1400);
+  setTimeout(() => {
+    button.textContent = label;
+  }, 1400);
 }
 
 /* ================================================================== *
@@ -529,8 +557,8 @@ function openExport() {
 
   $('scope-marked-detail').textContent = marked.length
     ? `${phrase(marked.length)} from ${sitesOf(marked)}`
-    : 'Nothing marked yet — use "Mark to share" on a clip, '
-      + 'or select several with the circles and mark them together';
+    : 'Nothing marked yet — use "Mark to share" on a clip, ' +
+      'or select several with the circles and mark them together';
   $('scope-all-detail').textContent = `${phrase(all.length)} from ${sitesOf(all)}`;
 
   dlg.querySelector('input[value="marked"]').checked = true;
@@ -552,7 +580,10 @@ function updateScope() {
     // The tally is the point. A bare count says "142 clips"; the domains are what tell
     // someone they are about to publish where they have been reading.
     const tally = domainTally(list);
-    const shown = tally.slice(0, 8).map(([d, n]) => `${d} (${n})`).join(', ');
+    const shown = tally
+      .slice(0, 8)
+      .map(([d, n]) => `${d} (${n})`)
+      .join(', ');
     const rest = tally.length > 8 ? `, and ${tally.length - 8} more` : '';
     $('tally').textContent = tally.length
       ? `${list.length} passages from ${tally.length} sites: ${shown}${rest}.`
@@ -621,8 +652,9 @@ async function runBackup(handle, why) {
     // product was built in response to.
     const html = buildExportHtml(state.clips, {
       title: 'Shelf — full archive',
-      footerNote: `A complete copy of the library, readable without Shelf. `
-        + `${BACKUP_FILENAME} beside it restores everything back into the extension.`,
+      footerNote:
+        `A complete copy of the library, readable without Shelf. ` +
+        `${BACKUP_FILENAME} beside it restores everything back into the extension.`,
     });
     const { written } = await writeBackup(handle, buildBackupJson(state.clips), html);
     await db.setMeta('lastBackupAt', Date.now());
@@ -644,7 +676,7 @@ async function chooseBackupFolder() {
     return;
   }
   const handle = await pickBackupDirectory();
-  if (!handle) return;                       // dismissed
+  if (!handle) return; // dismissed
   // Structured-cloneable, so it persists in IndexedDB across restarts (TRD §5.2).
   await db.setMeta('backupDir', handle);
   await runBackup(handle, 'first');
@@ -678,7 +710,8 @@ async function restoreFromFile(file) {
   }
   state.clips = await db.getAllClips();
   log('restored', restored);
-  $('backup-status').textContent = `Restored ${restored} ${restored === 1 ? 'clip' : 'clips'}.`;
+  $('backup-status').textContent =
+    `Restored ${restored} ${restored === 1 ? 'clip' : 'clips'}.`;
   render();
 }
 
@@ -698,8 +731,8 @@ function where(handle) {
 /** Nudge, not an error — the backup is working, it is just confusingly placed. */
 function folderNameHint(handle) {
   return handle && looksLikeAFilename(handle.name)
-    ? ` That folder is named like a file, so you now have ${handle.name}/${BACKUP_FILENAME}.`
-      + ' Harmless, but "Change backup folder" will tidy it.'
+    ? ` That folder is named like a file, so you now have ${handle.name}/${BACKUP_FILENAME}.` +
+        ' Harmless, but "Change backup folder" will tidy it.'
     : '';
 }
 
@@ -717,15 +750,17 @@ async function renderBackupStatus() {
     status.textContent = !live
       ? `Backup folder "${handle.name}" needs reconnecting — click Back up now.`
       : last
-        ? `Backed up ${relativePhrase(last, Date.now())} to ${where(handle)} — `
-          + `${BACKUP_FILENAME} to restore, ${BACKUP_HTML_FILENAME} to read.`
-          + folderNameHint(handle)
+        ? `Backed up ${relativePhrase(last, Date.now())} to ${where(handle)} — ` +
+          `${BACKUP_FILENAME} to restore, ${BACKUP_HTML_FILENAME} to read.` +
+          folderNameHint(handle)
         : `Backup folder ${where(handle)} is set. Nothing written yet.`;
   } else if (!supportsDirectoryBackup()) {
-    status.textContent = 'This browser cannot write to a folder. Download JSON regularly instead.';
+    status.textContent =
+      'This browser cannot write to a folder. Download JSON regularly instead.';
   } else {
-    status.textContent = 'No backup folder set — pick any folder and Shelf writes two files into it. '
-      + 'Lose this machine without one and the clips go with it.';
+    status.textContent =
+      'No backup folder set — pick any folder and Shelf writes two files into it. ' +
+      'Lose this machine without one and the clips go with it.';
   }
 
   // The escalating warning. PRD §12 rates machine-loss-without-backup High, and the
@@ -752,8 +787,12 @@ async function initTheme() {
   let theme = 'light';
   try {
     const stored = await chrome.storage.local.get('theme');
-    theme = stored.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-  } catch { /* storage unavailable; light is a safe default */ }
+    theme =
+      stored.theme ||
+      (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  } catch {
+    /* storage unavailable; light is a safe default */
+  }
   applyTheme(theme);
 }
 
@@ -766,7 +805,11 @@ async function toggleTheme() {
   const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
   applyTheme(next);
   // storage.local, not localStorage — the popup and onboarding read it too (TRD §5.3).
-  try { await chrome.storage.local.set({ theme: next }); } catch { /* non-fatal */ }
+  try {
+    await chrome.storage.local.set({ theme: next });
+  } catch {
+    /* non-fatal */
+  }
 }
 
 /* ================================================================== *
@@ -774,7 +817,10 @@ async function toggleTheme() {
  * ================================================================== */
 
 function bind() {
-  $('q').addEventListener('input', (e) => { state.query = e.target.value; render(); });
+  $('q').addEventListener('input', (e) => {
+    state.query = e.target.value;
+    render();
+  });
   for (const btn of document.querySelectorAll('.sort button')) {
     btn.addEventListener('click', () => {
       state.sort = btn.dataset.sort;
@@ -790,19 +836,25 @@ function bind() {
   $('backup-choose').addEventListener('click', chooseBackupFolder);
   $('nobackup-setup').addEventListener('click', chooseBackupFolder);
   $('backup-now').addEventListener('click', backupNow);
-  $('backup-download').addEventListener('click', () => downloadJson(buildBackupJson(state.clips)));
+  $('backup-download').addEventListener('click', () =>
+    downloadJson(buildBackupJson(state.clips))
+  );
   $('backup-read').addEventListener('click', () => {
-    const html = buildExportHtml(state.clips, { title: 'Shelf — full archive' });
+    const html = buildExportHtml(state.clips, {
+      title: 'Shelf — full archive',
+    });
     const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
     const a = document.createElement('a');
-    a.href = url; a.download = BACKUP_HTML_FILENAME; a.click();
+    a.href = url;
+    a.download = BACKUP_HTML_FILENAME;
+    a.click();
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   });
   $('backup-restore').addEventListener('click', () => $('restore-input').click());
   $('restore-input').addEventListener('change', (e) => {
     const file = e.target.files?.[0];
     if (file) restoreFromFile(file);
-    e.target.value = '';          // so picking the same file twice fires again
+    e.target.value = ''; // so picking the same file twice fires again
   });
   for (const radio of $('exportdlg').querySelectorAll('input[name="scope"]')) {
     radio.addEventListener('change', updateScope);
@@ -811,17 +863,44 @@ function bind() {
     if ($('exportdlg').returnValue === 'go') runExport();
   });
   $('undo-btn').addEventListener('click', undo);
-  $('clearsel').addEventListener('click', () => { state.selected.clear(); render(); });
+  $('clearsel').addEventListener('click', () => {
+    state.selected.clear();
+    render();
+  });
   $('marksel').addEventListener('click', markSelected);
   $('delsel').addEventListener('click', () => removeClips([...state.selected]));
 
   document.addEventListener('keydown', (e) => {
+    // (e.key || '') — key is undefined for some synthetic and IME events, and calling a
+    // string method on undefined throws from inside a keydown handler, which kills every
+    // shortcut on the page for the rest of the session.
+    const key = (e.key || '').toLowerCase();
     const typing = /^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName ?? '');
-    if (e.key === '/' && !typing) { e.preventDefault(); $('q').focus(); }
-    if (e.key === 'Escape' && document.activeElement === $('q')) {
-      state.query = ''; $('q').value = ''; $('q').blur(); render();
+
+    if (key === '/' && !typing) {
+      e.preventDefault();
+      $('q').focus();
     }
-    if ((e.metaKey || e.ctrlKey) && e.key === 'z' && pendingUndo) { e.preventDefault(); undo(); }
+
+    if (key === 'escape' && document.activeElement === $('q')) {
+      state.query = '';
+      $('q').value = '';
+      $('q').blur();
+      render();
+    }
+
+    // Case-insensitive: with Caps Lock on, e.key is 'Z' and a strict === 'z' silently
+    // never matches, so the shortcut simply stops existing with nothing to explain why.
+    // Shift+Cmd+Z is redo elsewhere, so it is excluded.
+    if ((e.metaKey || e.ctrlKey) && !e.shiftKey && key === 'z') {
+      // Logged unconditionally, so "the shortcut does not work" can be told apart from
+      // "there was nothing to undo" without guessing.
+      log('undo shortcut pressed —', pendingUndo ? 'restoring' : 'nothing pending');
+      if (pendingUndo) {
+        e.preventDefault();
+        undo();
+      }
+    }
   });
 }
 
@@ -833,7 +912,7 @@ async function main() {
   log(`loaded ${state.clips.length} clips in ${(performance.now() - t0).toFixed(1)}ms`);
   render();
   await renderBackupStatus();
-  autoBackup();          // deliberately not awaited — never delay first paint for it
+  autoBackup(); // deliberately not awaited — never delay first paint for it
 }
 
 main();
