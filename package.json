@@ -1,0 +1,12 @@
+{
+  "name": "shelf",
+  "private": true,
+  "type": "module",
+  "description": "Dev-only tooling manifest. The extension in shelf/ has NO runtime dependencies and no build step \u2014 this file exists solely for editor types and the test runner, and is never packaged.",
+  "scripts": {
+    "test": "node --test \"test/*.test.mjs\""
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268"
+  }
+}

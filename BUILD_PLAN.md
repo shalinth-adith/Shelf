@@ -17,10 +17,10 @@ that was supposed to catch it being wrong.
 
 | # | Step | State |
 |---|---|---|
-| 1 | Manifest, icons, empty worker | ⏳ awaiting acceptance check |
-| 2 | `db.js` | ⏳ awaiting acceptance check |
-| 3 | `util.js` | — |
-| — | Safari quota probe | — |
+| 1 | Manifest, icons, empty worker | ✅ loads unpacked, worker boots |
+| 2 | `db.js` | ✅ record round-tripped in worker console |
+| 3 | `util.js` | ✅ 19 tests, 41 URL pairs |
+| — | Safari quota probe | ⏳ next — needs Safari + Xcode |
 | 4 | `background.js` | — |
 | 5 | `content.js` | — |
 | 6 | `shelf.js` | — |
@@ -85,7 +85,11 @@ rule change can trigger a migration rather than silently orphaning every stored 
 Also: `sha256` → first 32 hex chars, whitespace collapse, relative/absolute time
 formatting, HTML escaping.
 
-**Check:** a fixture table of ~30 URL pairs passes.
+**Check:** a fixture table of ~30 URL pairs passes. — `npm test`, 41 pairs, 19 tests.
+
+Tests run on Node's built-in runner with no dependencies, from `test/` at the repo
+root so nothing test-related is ever packaged. `npm test` is the only npm script;
+`@types/chrome` is the only entry in devDependencies and there are no dependencies.
 
 ---
 
