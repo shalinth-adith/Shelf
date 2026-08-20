@@ -4,6 +4,9 @@
 **Derived from:** TRD §18 build order
 **Rule:** each step has an acceptance check. **Do not advance on a failing check.**
 
+**Read [DECISIONS.md](DECISIONS.md) first.** Where PRD, TRD, and the design canvas
+(`design/Shelf Library.dc.html`) disagree, DECISIONS.md is authoritative.
+
 Steps are gated. One step is built, its check is run, and only then does the next begin.
 Nothing is written ahead of its step — a file written early cannot be verified by the check
 that was supposed to catch it being wrong.
@@ -15,7 +18,7 @@ that was supposed to catch it being wrong.
 | # | Step | State |
 |---|---|---|
 | 1 | Manifest, icons, empty worker | ⏳ awaiting acceptance check |
-| 2 | `db.js` | — |
+| 2 | `db.js` | ⏳ awaiting acceptance check |
 | 3 | `util.js` | — |
 | — | Safari quota probe | — |
 | 4 | `background.js` | — |

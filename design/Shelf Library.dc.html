@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Karla:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBFAF7; --sheet:#FFFFFF; --ink:#1B1A17; --ink-2:#4A4841; --muted:#8A867B;
+    --rule:#E6E2D8; --rule-soft:#EFEBE2; --accent:#1F5C5C; --accent-soft:#E7EFED; --warn:#8A5A1F;
+  }
+  [data-theme="dark"]{
+    --paper:#131615; --sheet:#191D1C; --ink:#ECE9E1; --ink-2:#C3C0B7; --muted:#8B928E;
+    --rule:#282D2B; --rule-soft:#222725; --accent:#83BBB1; --accent-soft:#1D2A28; --warn:#D9A867;
+  }
+  html,body{margin:0;padding:0;background:var(--paper);}
+  *{box-sizing:border-box;}
+  input,button,textarea{font:inherit;color:inherit;}
+  a{color:var(--accent);text-decoration:none;}
+  a:hover{color:var(--ink);text-decoration:underline;text-underline-offset:3px;}
+  ::selection{background:var(--accent-soft);}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:var(--paper);color:var(--ink);font-family:Karla,system-ui,sans-serif;-webkit-font-smoothing:antialiased;">
+
+  <header style="position:sticky;top:0;z-index:20;background:var(--paper);border-bottom:1px solid var(--rule);">
+    <div style="max-width:1080px;margin:0 auto;padding:22px 40px 0;display:flex;align-items:baseline;gap:20px;">
+      <div style="display:flex;align-items:baseline;gap:10px;">
+        <span style="font-family:Lora,Georgia,serif;font-size:23px;font-weight:600;letter-spacing:-0.01em;">Shelf</span>
+        <span style="font-size:12px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;">local only</span>
+      </div>
+      <div style="flex:1;"></div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button onClick="{{ showLibrary }}" style="background:none;border:none;padding:6px 10px;font-size:14px;color:var(--ink-2);cursor:pointer;border-radius:5px;" style-hover="background:var(--rule-soft);">Library</button>
+        <button onClick="{{ showPopup }}" style="background:none;border:none;padding:6px 10px;font-size:14px;color:var(--ink-2);cursor:pointer;border-radius:5px;" style-hover="background:var(--rule-soft);">Extension</button>
+        <span style="width:1px;height:18px;background:var(--rule);margin:0 6px;"></span>
+        <button onClick="{{ toggleTheme }}" title="Toggle theme" style="background:none;border:1px solid var(--rule);width:30px;height:30px;border-radius:50%;cursor:pointer;color:var(--muted);font-size:13px;display:flex;align-items:center;justify-content:center;" style-hover="border-color:var(--accent);color:var(--accent);">{{ themeGlyph }}</button>
+      </div>
+    </div>
+
+    <sc-if value="{{ onLibrary }}" hint-placeholder-val="{{ true }}">
+      <div style="max-width:1080px;margin:0 auto;padding:14px 40px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:9px;flex:1;min-width:260px;border-bottom:1px solid var(--rule);padding:6px 2px;">
+          <span style="color:var(--muted);font-size:14px;">⌕</span>
+          <input value="{{ query }}" onChange="{{ onQuery }}" placeholder="Search titles, notes, sites" style="flex:1;background:none;border:none;outline:none;font-size:15px;padding:2px 0;" />
+        </div>
+        <div style="display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);">
+          <input type="date" value="{{ from }}" onChange="{{ onFrom }}" style="background:none;border:1px solid var(--rule);border-radius:5px;padding:5px 8px;font-size:13px;color:var(--ink-2);" />
+          <span>to</span>
+          <input type="date" value="{{ to }}" onChange="{{ onTo }}" style="background:none;border:1px solid var(--rule);border-radius:5px;padding:5px 8px;font-size:13px;color:var(--ink-2);" />
+        </div>
+        <div style="display:flex;align-items:center;gap:2px;border:1px solid var(--rule);border-radius:6px;padding:2px;">
+          <button onClick="{{ sortNewest }}" style="border:none;background:{{ bgNewest }};color:{{ fgNewest }};padding:5px 10px;font-size:13px;border-radius:4px;cursor:pointer;">Newest</button>
+          <button onClick="{{ sortOldest }}" style="border:none;background:{{ bgOldest }};color:{{ fgOldest }};padding:5px 10px;font-size:13px;border-radius:4px;cursor:pointer;">Oldest</button>
+          <button onClick="{{ sortTitle }}" style="border:none;background:{{ bgTitle }};color:{{ fgTitle }};padding:5px 10px;font-size:13px;border-radius:4px;cursor:pointer;">Title</button>
+        </div>
+        <button onClick="{{ exportJson }}" style="background:none;border:1px solid var(--rule);border-radius:6px;padding:6px 12px;font-size:13px;color:var(--ink-2);cursor:pointer;" style-hover="border-color:var(--accent);color:var(--accent);">Export JSON</button>
+      </div>
+    </sc-if>
+  </header>
+
+  <sc-if value="{{ onLibrary }}" hint-placeholder-val="{{ true }}">
+    <main style="max-width:1080px;margin:0 auto;padding:34px 40px 120px;">
+
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:20px;padding-bottom:26px;">
+        <div>
+          <h1 style="font-family:Lora,Georgia,serif;font-size:31px;font-weight:500;margin:0 0 6px;letter-spacing:-0.015em;">Saved</h1>
+          <p style="margin:0;font-size:14px;color:var(--muted);">{{ summary }}</p>
+        </div>
+        <sc-if value="{{ hasSelection }}">
+          <div style="display:flex;align-items:center;gap:12px;background:var(--accent-soft);border-radius:8px;padding:8px 8px 8px 14px;">
+            <span style="font-size:13px;color:var(--accent);">{{ selectionLabel }}</span>
+            <button onClick="{{ deleteSelected }}" style="background:var(--accent);border:none;color:var(--paper);padding:6px 12px;border-radius:5px;font-size:13px;cursor:pointer;">Delete</button>
+            <button onClick="{{ clearSelection }}" style="background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;padding:6px 4px;">Clear</button>
+          </div>
+        </sc-if>
+      </div>
+
+      <sc-for list="{{ groups }}" as="g" hint-placeholder-count="3">
+        <section style="display:grid;grid-template-columns:170px 1fr;gap:34px;align-items:start;padding-bottom:8px;">
+          <div style="position:sticky;top:132px;padding-top:22px;">
+            <div style="font-family:Lora,Georgia,serif;font-size:17px;line-height:1.35;color:var(--ink);">{{ g.weekday }}</div>
+            <div style="font-family:Lora,Georgia,serif;font-size:17px;line-height:1.35;color:var(--muted);">{{ g.date }}</div>
+            <div style="margin-top:8px;font-size:12px;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);">{{ g.count }}</div>
+          </div>
+
+          <div style="border-left:1px solid var(--rule);display:flex;flex-direction:column;">
+            <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="3">
+              <article style="position:relative;display:grid;grid-template-columns:26px 1fr {{ it.thumbCol }};gap:18px;padding:22px 4px 24px 22px;border-bottom:1px solid var(--rule-soft);">
+                <span style="position:absolute;left:-4px;top:32px;width:7px;height:7px;border-radius:50%;background:var(--rule);"></span>
+
+                <button onClick="{{ it.toggle }}" title="Select" style="width:19px;height:19px;margin-top:3px;border-radius:50%;border:1px solid {{ it.checkBorder }};background:{{ it.checkBg }};color:var(--paper);font-size:11px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;">{{ it.checkMark }}</button>
+
+                <div style="min-width:0;">
+                  <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);padding-bottom:7px;">
+                    <span style="width:15px;height:15px;border-radius:3px;background:var(--accent-soft);color:var(--accent);font-family:Lora,Georgia,serif;font-size:10px;display:flex;align-items:center;justify-content:center;">{{ it.initial }}</span>
+                    <span style="color:var(--ink-2);">{{ it.domain }}</span>
+                    <span>·</span>
+                    <span>{{ it.time }}</span>
+                  </div>
+
+                  <a href="{{ it.url }}" target="_blank" rel="noreferrer" style="font-family:Lora,Georgia,serif;font-size:20px;line-height:1.35;font-weight:500;color:var(--ink);display:block;letter-spacing:-0.01em;text-wrap:pretty;" style-hover="color:var(--accent);">{{ it.title }}</a>
+
+                  <sc-if value="{{ it.hasHighlight }}">
+                    <blockquote style="margin:12px 0 0;padding:0 0 0 14px;border-left:2px solid var(--accent-soft);font-family:Lora,Georgia,serif;font-style:italic;font-size:15px;line-height:1.55;color:var(--ink-2);text-wrap:pretty;">{{ it.highlight }}</blockquote>
+                  </sc-if>
+
+                  <sc-if value="{{ it.hasNote }}">
+                    <div style="margin-top:12px;display:flex;gap:9px;align-items:baseline;">
+                      <span style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent);flex:none;padding-top:2px;">Note</span>
+                      <span style="font-size:14px;line-height:1.55;color:var(--ink-2);text-wrap:pretty;">{{ it.note }}</span>
+                    </div>
+                  </sc-if>
+
+                  <div style="margin-top:14px;">
+                    <button onClick="{{ it.remove }}" style="background:none;border:none;padding:0;font-size:12.5px;color:var(--muted);cursor:pointer;opacity:0.75;" style-hover="color:var(--accent);opacity:1;">Remove</button>
+                  </div>
+                </div>
+
+                <sc-if value="{{ it.hasThumb }}">
+                  <div style="width:132px;height:88px;border:1px solid var(--rule);border-radius:4px;background:var(--sheet);display:flex;align-items:center;justify-content:center;font-family:Lora,Georgia,serif;font-size:26px;color:var(--rule);">{{ it.initial }}</div>
+                </sc-if>
+              </article>
+            </sc-for>
+          </div>
+        </section>
+      </sc-for>
+
+      <sc-if value="{{ isEmpty }}">
+        <div style="border:1px dashed var(--rule);border-radius:8px;padding:56px 40px;text-align:center;">
+          <p style="font-family:Lora,Georgia,serif;font-size:19px;margin:0 0 8px;color:var(--ink);">Nothing here yet</p>
+          <p style="margin:0;font-size:14px;color:var(--muted);">Nothing matches these filters. Clear the search or widen the dates.</p>
+        </div>
+      </sc-if>
+
+      <footer style="padding-top:44px;font-size:12.5px;color:var(--muted);line-height:1.7;">
+        Everything on this page lives in this browser only. No account, no sync, no server.
+      </footer>
+    </main>
+  </sc-if>
+
+  <sc-if value="{{ onPopup }}">
+    <main style="max-width:1080px;margin:0 auto;padding:38px 40px 120px;">
+      <h1 style="font-family:Lora,Georgia,serif;font-size:31px;font-weight:500;margin:0 0 6px;letter-spacing:-0.015em;">Extension popup</h1>
+      <p style="margin:0 0 34px;font-size:14px;color:var(--muted);max-width:52ch;text-wrap:pretty;">One click saves the page. The note field is optional and never blocks the save. The first popup is live — save from it and the item appears in your library.</p>
+
+      <div style="display:flex;flex-wrap:wrap;gap:26px;">
+
+        <div>
+          <div style="font-size:12px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);padding-bottom:10px;">{{ liveStateLabel }}</div>
+          <div style="width:344px;background:var(--sheet);border:1px solid var(--rule);border-radius:10px;overflow:hidden;box-shadow:0 12px 28px rgba(0,0,0,0.07);">
+            <div style="display:flex;align-items:center;gap:9px;padding:13px 16px;border-bottom:1px solid var(--rule-soft);">
+              <span style="font-family:Lora,Georgia,serif;font-size:14px;font-weight:600;">Shelf</span>
+              <span style="flex:1;"></span>
+              <span style="font-size:11px;color:var(--muted);letter-spacing:0.05em;">{{ liveCount }}</span>
+            </div>
+            <div style="padding:16px;">
+              <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);padding-bottom:8px;">
+                <span style="width:15px;height:15px;border-radius:3px;background:var(--accent-soft);color:var(--accent);font-family:Lora,Georgia,serif;font-size:10px;display:flex;align-items:center;justify-content:center;">c</span>
+                <span style="color:var(--ink-2);">craft.works</span>
+              </div>
+              <div style="font-family:Lora,Georgia,serif;font-size:17px;line-height:1.4;padding-bottom:14px;">Notes on keeping a reading log</div>
+              <textarea value="{{ draftNote }}" onChange="{{ onDraftNote }}" placeholder="Add a note (optional)" rows="3" style="width:100%;resize:none;background:var(--paper);border:1px solid var(--rule);border-radius:6px;padding:9px 10px;font-size:13.5px;line-height:1.5;outline:none;color:var(--ink);"></textarea>
+              <sc-if value="{{ liveSaved }}">
+                <div style="display:flex;align-items:center;gap:8px;padding-top:12px;font-size:13px;color:var(--accent);">
+                  <span>✓</span><span>{{ liveSavedText }}</span>
+                </div>
+              </sc-if>
+              <div style="display:flex;gap:8px;padding-top:12px;">
+                <button onClick="{{ savePage }}" style="flex:1;background:var(--accent);border:none;color:var(--sheet);padding:10px;border-radius:6px;font-size:14px;font-weight:500;cursor:pointer;" style-hover="filter:brightness(1.1);">{{ liveButton }}</button>
+                <button onClick="{{ resetLive }}" style="background:none;border:1px solid var(--rule);color:var(--ink-2);padding:10px 12px;border-radius:6px;font-size:13.5px;cursor:pointer;">Reset</button>
+              </div>
+              <div style="padding-top:11px;font-size:11.5px;color:var(--muted);">Saved to this browser · ⌘⇧S</div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size:12px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);padding-bottom:10px;">Saving</div>
+          <div style="width:344px;background:var(--sheet);border:1px solid var(--rule);border-radius:10px;overflow:hidden;box-shadow:0 12px 28px rgba(0,0,0,0.07);">
+            <div style="display:flex;align-items:center;gap:9px;padding:13px 16px;border-bottom:1px solid var(--rule-soft);">
+              <span style="font-family:Lora,Georgia,serif;font-size:14px;font-weight:600;">Shelf</span>
+            </div>
+            <div style="padding:16px;">
+              <div style="font-size:12.5px;color:var(--muted);padding-bottom:8px;">aeon.co</div>
+              <div style="font-family:Lora,Georgia,serif;font-size:17px;line-height:1.4;padding-bottom:16px;">What we owe to the things we keep</div>
+              <div style="height:3px;border-radius:2px;background:var(--rule-soft);overflow:hidden;">
+                <div style="width:62%;height:100%;background:var(--accent);"></div>
+              </div>
+              <div style="padding-top:10px;font-size:13px;color:var(--muted);">Capturing page and highlight…</div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size:12px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);padding-bottom:10px;">Saved</div>
+          <div style="width:344px;background:var(--sheet);border:1px solid var(--rule);border-radius:10px;overflow:hidden;box-shadow:0 12px 28px rgba(0,0,0,0.07);">
+            <div style="display:flex;align-items:center;gap:9px;padding:13px 16px;border-bottom:1px solid var(--rule-soft);">
+              <span style="font-family:Lora,Georgia,serif;font-size:14px;font-weight:600;">Shelf</span>
+            </div>
+            <div style="padding:16px;">
+              <div style="display:flex;align-items:center;gap:9px;font-size:14px;color:var(--accent);padding-bottom:12px;">
+                <span style="width:20px;height:20px;border-radius:50%;background:var(--accent);color:var(--sheet);font-size:11px;display:flex;align-items:center;justify-content:center;">✓</span>
+                <span>Saved · 41 ms</span>
+              </div>
+              <div style="font-family:Lora,Georgia,serif;font-size:17px;line-height:1.4;">What we owe to the things we keep</div>
+              <div style="font-size:12.5px;color:var(--muted);padding-top:6px;">aeon.co · today, 9:12 AM</div>
+              <div style="display:flex;gap:8px;padding-top:16px;">
+                <button style="flex:1;background:none;border:1px solid var(--rule);color:var(--ink-2);padding:9px;border-radius:6px;font-size:13.5px;cursor:pointer;">Add a note</button>
+                <button style="flex:1;background:none;border:1px solid var(--rule);color:var(--ink-2);padding:9px;border-radius:6px;font-size:13.5px;cursor:pointer;">Open library</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size:12px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);padding-bottom:10px;">Already saved</div>
+          <div style="width:344px;background:var(--sheet);border:1px solid var(--rule);border-radius:10px;overflow:hidden;box-shadow:0 12px 28px rgba(0,0,0,0.07);">
+            <div style="display:flex;align-items:center;gap:9px;padding:13px 16px;border-bottom:1px solid var(--rule-soft);">
+              <span style="font-family:Lora,Georgia,serif;font-size:14px;font-weight:600;">Shelf</span>
+            </div>
+            <div style="padding:16px;">
+              <div style="font-size:13px;color:var(--ink-2);padding-bottom:10px;">In your library since 19 Aug</div>
+              <div style="font-family:Lora,Georgia,serif;font-size:17px;line-height:1.4;">Commonplace book</div>
+              <div style="margin-top:12px;padding:10px 12px;background:var(--paper);border:1px solid var(--rule);border-radius:6px;font-size:13.5px;line-height:1.5;color:var(--ink-2);">Readers copied passages worth remembering into a single volume kept for life.</div>
+              <div style="display:flex;gap:8px;padding-top:14px;">
+                <button style="flex:1;background:none;border:1px solid var(--rule);color:var(--ink-2);padding:9px;border-radius:6px;font-size:13.5px;cursor:pointer;">Update note</button>
+                <button style="background:none;border:1px solid var(--rule);color:var(--muted);padding:9px 12px;border-radius:6px;font-size:13.5px;cursor:pointer;">Remove</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size:12px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);padding-bottom:10px;">Restricted page</div>
+          <div style="width:344px;background:var(--sheet);border:1px solid var(--rule);border-radius:10px;overflow:hidden;box-shadow:0 12px 28px rgba(0,0,0,0.07);">
+            <div style="display:flex;align-items:center;gap:9px;padding:13px 16px;border-bottom:1px solid var(--rule-soft);">
+              <span style="font-family:Lora,Georgia,serif;font-size:14px;font-weight:600;">Shelf</span>
+            </div>
+            <div style="padding:16px;">
+              <div style="font-size:13px;color:var(--warn);padding-bottom:8px;">Can't read this page</div>
+              <div style="font-family:Lora,Georgia,serif;font-size:16px;line-height:1.45;color:var(--ink);">Browser settings pages are off limits to extensions.</div>
+              <div style="padding-top:10px;font-size:13px;line-height:1.55;color:var(--muted);">You can still save the address on its own, without a title or highlight.</div>
+              <button style="width:100%;margin-top:14px;background:none;border:1px solid var(--rule);color:var(--ink-2);padding:9px;border-radius:6px;font-size:13.5px;cursor:pointer;">Save address only</button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size:12px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);padding-bottom:10px;">Storage nearly full</div>
+          <div style="width:344px;background:var(--sheet);border:1px solid var(--rule);border-radius:10px;overflow:hidden;box-shadow:0 12px 28px rgba(0,0,0,0.07);">
+            <div style="display:flex;align-items:center;gap:9px;padding:13px 16px;border-bottom:1px solid var(--rule-soft);">
+              <span style="font-family:Lora,Georgia,serif;font-size:14px;font-weight:600;">Shelf</span>
+            </div>
+            <div style="padding:16px;">
+              <div style="font-size:13px;color:var(--warn);padding-bottom:12px;">92% of local storage used</div>
+              <div style="height:3px;border-radius:2px;background:var(--rule-soft);overflow:hidden;">
+                <div style="width:92%;height:100%;background:var(--warn);"></div>
+              </div>
+              <div style="padding-top:12px;font-size:13px;line-height:1.6;color:var(--ink-2);">Saves keep working, but thumbnails will stop being kept. Export your library or clear old thumbnails to free space.</div>
+              <div style="display:flex;gap:8px;padding-top:14px;">
+                <button style="flex:1;background:var(--accent);border:none;color:var(--sheet);padding:9px;border-radius:6px;font-size:13.5px;cursor:pointer;">Export JSON</button>
+                <button style="flex:1;background:none;border:1px solid var(--rule);color:var(--ink-2);padding:9px;border-radius:6px;font-size:13.5px;cursor:pointer;">Clear thumbnails</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1240,&quot;height&quot;:900}}">
+const KEY = 'shelf.items.v1';
+const THEME_KEY = 'shelf.theme.v1';
+
+const SEED = [
+  {id:'a1', title:'What we owe to the things we keep', domain:'aeon.co', url:'https://aeon.co/essays/what-we-owe-to-the-things-we-keep', at:'2026-08-20T09:12:00', note:'Section three on stewardship is the part I want to reuse.', highlight:'A collection is not a hoard; it is an argument about what deserves to persist.', thumb:true},
+  {id:'a2', title:'Local-first software: you own your data', domain:'arxiv.org', url:'https://arxiv.org/abs/2101.00001', at:'2026-08-20T08:40:00', note:'', highlight:'Data ownership and real-time collaboration are not mutually exclusive.', thumb:false},
+  {id:'a3', title:'sqlite-wasm — persistent storage in the browser', domain:'github.com', url:'https://github.com/sqlite/sqlite-wasm', at:'2026-08-19T22:05:00', note:'Probably overkill for v1. Keep for later.', highlight:'', thumb:true},
+  {id:'a4', title:'Commonplace book', domain:'wikipedia.org', url:'https://en.wikipedia.org/wiki/Commonplace_book', at:'2026-08-19T14:31:00', note:'', highlight:'Readers copied passages worth remembering into a single volume kept for life.', thumb:false},
+  {id:'a5', title:'The memory that lives outside your head', domain:'nautil.us', url:'https://nautil.us/the-memory-that-lives-outside-your-head', at:'2026-08-19T09:58:00', note:'', highlight:'', thumb:true},
+  {id:'a6', title:'Nine years of reading notes, and what they cost me', domain:'longreads.com', url:'https://longreads.com/nine-years-of-reading-notes', at:'2026-08-18T20:12:00', note:'Good counterargument to capturing more.', highlight:'', thumb:false},
+  {id:'a7', title:'Marginalia', domain:'lrb.co.uk', url:'https://www.lrb.co.uk/marginalia', at:'2026-08-18T11:03:00', note:'', highlight:'The margin is the only place in a book where the reader is allowed to answer back.', thumb:true},
+  {id:'a8', title:'Storage quotas and eviction criteria', domain:'developer.mozilla.org', url:'https://developer.mozilla.org/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria', at:'2026-08-17T16:45:00', note:'Reference for the storage-full warning.', highlight:'', thumb:false},
+  {id:'a9', title:'Why libraries kept losing their catalogues', domain:'worksinprogress.co', url:'https://worksinprogress.co/issue/losing-the-catalogue', at:'2026-08-16T19:20:00', note:'', highlight:'', thumb:true},
+  {id:'a10', title:'The pleasures of the unread shelf', domain:'newyorker.com', url:'https://www.newyorker.com/culture/the-unread-shelf', at:'2026-08-15T10:07:00', note:'Opening line is worth stealing the rhythm of.', highlight:'', thumb:false},
+  {id:'a11', title:'Evergreen notes should be atomic', domain:'notes.andymatuschak.org', url:'https://notes.andymatuschak.org/Evergreen_notes_should_be_atomic', at:'2026-08-14T21:33:00', note:'', highlight:'A note that says one thing can be linked to from anywhere.', thumb:false},
+  {id:'a12', title:'A short history of the bookmark', domain:'publicdomainreview.org', url:'https://publicdomainreview.org/essay/a-short-history-of-the-bookmark', at:'2026-08-13T13:15:00', note:'', highlight:'', thumb:true}
+];
+
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+class Component extends DCLogic {
+  state = {
+    items: SEED,
+    query: '',
+    from: '',
+    to: '',
+    sort: 'newest',
+    selected: [],
+    view: 'library',
+    theme: 'light',
+    draftNote: '',
+    liveSaved: false,
+    liveCount: SEED.length
+  };
+
+  componentDidMount() {
+    let items = SEED;
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) { const p = JSON.parse(raw); if (Array.isArray(p) && p.length) items = p; }
+      else localStorage.setItem(KEY, JSON.stringify(SEED));
+    } catch (e) {}
+    let theme = 'light';
+    try { theme = localStorage.getItem(THEME_KEY) || 'light'; } catch (e) {}
+    document.documentElement.setAttribute('data-theme', theme);
+    this.setState({ items, theme, liveCount: items.length });
+  }
+
+  persist(items) {
+    try { localStorage.setItem(KEY, JSON.stringify(items)); } catch (e) {}
+    this.setState({ items, liveCount: items.length });
+  }
+
+  filtered() {
+    const { items, query, from, to, sort } = this.state;
+    const q = query.trim().toLowerCase();
+    let out = items.filter(it => {
+      if (q) {
+        const hay = (it.title + ' ' + it.domain + ' ' + (it.note || '') + ' ' + (it.highlight || '')).toLowerCase();
+        if (hay.indexOf(q) === -1) return false;
+      }
+      const day = it.at.slice(0, 10);
+      if (from && day < from) return false;
+      if (to && day > to) return false;
+      return true;
+    });
+    out.sort((a, b) => sort === 'title'
+      ? a.title.localeCompare(b.title)
+      : (sort === 'oldest' ? a.at.localeCompare(b.at) : b.at.localeCompare(a.at)));
+    return out;
+  }
+
+  timeText(at) {
+    const d = new Date(at);
+    let h = d.getHours(); const m = String(d.getMinutes()).padStart(2, '0');
+    const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12;
+    return h + ':' + m + ' ' + ap;
+  }
+
+  renderVals() {
+    const s = this.state;
+    const list = this.filtered();
+    const sel = s.selected;
+
+    const decorate = (it) => ({
+      id: it.id, title: it.title, url: it.url, domain: it.domain,
+      initial: it.domain.replace('www.', '').charAt(0),
+      time: this.timeText(it.at),
+      note: it.note, hasNote: !!it.note,
+      highlight: it.highlight, hasHighlight: !!it.highlight,
+      hasThumb: !!it.thumb, thumbCol: it.thumb ? '132px' : '0px',
+      checkBg: sel.indexOf(it.id) > -1 ? 'var(--accent)' : 'transparent',
+      checkBorder: sel.indexOf(it.id) > -1 ? 'var(--accent)' : 'var(--rule)',
+      checkMark: sel.indexOf(it.id) > -1 ? '✓' : '',
+      toggle: () => this.setState(st => ({
+        selected: st.selected.indexOf(it.id) > -1 ? st.selected.filter(x => x !== it.id) : st.selected.concat([it.id])
+      })),
+      remove: () => this.persist(this.state.items.filter(x => x.id !== it.id))
+    });
+
+    let groups = [];
+    if (s.sort === 'title') {
+      groups = list.length ? [{ weekday: 'All saves', date: 'by title', count: list.length + (list.length === 1 ? ' save' : ' saves'), items: list.map(decorate) }] : [];
+    } else {
+      const byDay = {};
+      list.forEach(it => { const k = it.at.slice(0, 10); (byDay[k] = byDay[k] || []).push(it); });
+      groups = Object.keys(byDay).sort((a, b) => s.sort === 'oldest' ? a.localeCompare(b) : b.localeCompare(a)).map(k => {
+        const d = new Date(k + 'T12:00:00');
+        return {
+          weekday: DAYS[d.getDay()],
+          date: d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear(),
+          count: byDay[k].length + (byDay[k].length === 1 ? ' save' : ' saves'),
+          items: byDay[k].map(decorate)
+        };
+      });
+    }
+
+    const domains = {};
+    s.items.forEach(it => { domains[it.domain] = 1; });
+    const nDom = Object.keys(domains).length;
+
+    const on = (k) => s.sort === k;
+    return {
+      groups,
+      isEmpty: list.length === 0,
+      onLibrary: s.view === 'library',
+      onPopup: s.view === 'popup',
+      showLibrary: () => this.setState({ view: 'library' }),
+      showPopup: () => this.setState({ view: 'popup' }),
+      summary: list.length + (list.length === 1 ? ' save' : ' saves') + ' · ' + nDom + ' sites · kept in this browser',
+      query: s.query, from: s.from, to: s.to,
+      onQuery: (e) => this.setState({ query: e.target.value }),
+      onFrom: (e) => this.setState({ from: e.target.value }),
+      onTo: (e) => this.setState({ to: e.target.value }),
+      sortNewest: () => this.setState({ sort: 'newest' }),
+      sortOldest: () => this.setState({ sort: 'oldest' }),
+      sortTitle: () => this.setState({ sort: 'title' }),
+      bgNewest: on('newest') ? 'var(--accent-soft)' : 'transparent',
+      fgNewest: on('newest') ? 'var(--accent)' : 'var(--muted)',
+      bgOldest: on('oldest') ? 'var(--accent-soft)' : 'transparent',
+      fgOldest: on('oldest') ? 'var(--accent)' : 'var(--muted)',
+      bgTitle: on('title') ? 'var(--accent-soft)' : 'transparent',
+      fgTitle: on('title') ? 'var(--accent)' : 'var(--muted)',
+      hasSelection: sel.length > 0,
+      selectionLabel: sel.length + ' selected',
+      clearSelection: () => this.setState({ selected: [] }),
+      deleteSelected: () => { this.persist(s.items.filter(it => sel.indexOf(it.id) === -1)); this.setState({ selected: [] }); },
+      exportJson: () => {
+        const blob = new Blob([JSON.stringify(s.items, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'shelf-library.json';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      },
+      themeGlyph: s.theme === 'dark' ? '☾' : '☀',
+      toggleTheme: () => {
+        const t = s.theme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', t);
+        try { localStorage.setItem(THEME_KEY, t); } catch (e) {}
+        this.setState({ theme: t });
+      },
+      draftNote: s.draftNote,
+      onDraftNote: (e) => this.setState({ draftNote: e.target.value }),
+      liveCount: s.liveCount + ' saved',
+      liveSaved: s.liveSaved,
+      liveSavedText: 'Saved to your library',
+      liveStateLabel: s.liveSaved ? 'Live popup · saved' : 'Live popup · idle',
+      liveButton: s.liveSaved ? 'Saved' : 'Save page',
+      resetLive: () => this.setState({ liveSaved: false, draftNote: '' }),
+      savePage: () => {
+        if (s.liveSaved) return;
+        const now = new Date();
+        const pad = (n) => String(n).padStart(2, '0');
+        const at = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + 'T' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':00';
+        const item = {
+          id: 'n' + Date.now(),
+          title: 'Notes on keeping a reading log',
+          domain: 'craft.works',
+          url: 'https://craft.works/notes-on-keeping-a-reading-log',
+          at, note: s.draftNote, highlight: '', thumb: false
+        };
+        this.persist([item].concat(s.items));
+        this.setState({ liveSaved: true });
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>
