@@ -172,29 +172,47 @@ function ensureContextMenu() {
   return menuReady;
 }
 
+/**
+ * Create one menu item, consuming any error.
+ *
+ * chrome.contextMenus.create is NOT promise-based. It returns the id synchronously and
+ * reports failure through runtime.lastError, so `await create(...)` awaits a string and
+ * a try/catch around it can never see the failure — which is exactly how "Cannot create
+ * item with duplicate id" surfaced as an Unchecked runtime.lastError in the extensions
+ * error panel instead of being handled here.
+ *
+ * The callback form is the only way to consume it. A duplicate id means the item already
+ * exists, which is the state we wanted anyway, so it is logged rather than treated as a
+ * failure.
+ */
+function createMenu(props) {
+  chrome.contextMenus.create(props, () => {
+    const err = chrome.runtime.lastError;
+    if (err) log('menu item', props.id, '—', err.message);
+  });
+}
+
 async function installContextMenu() {
-  try {
-    // removeAll before create, or a duplicate id throws on every pass that re-runs
-    // installation.
-    await chrome.contextMenus.removeAll();
-    await chrome.contextMenus.create({
-      id: MENU_ID,
-      title: 'Save selection to Shelf',
-      contexts: ['selection'],
-    });
-    // On the toolbar icon itself. Left-click currently requests site access (see
-    // action.onClicked), so the shelf needs its own way in until step 9's popup gives
-    // it a proper button.
-    await chrome.contextMenus.create({
-      id: MENU_OPEN_ID,
-      title: 'Open shelf',
-      contexts: ['action'],
-    });
-    log('context menu installed');
-  } catch (err) {
-    menuReady = null;               // let the next caller retry
-    console.error('[shelf:sw] context menu install failed', err);
-  }
+  // Callback form, so removal is genuinely complete before anything is created.
+  // Context menus survive worker teardown, so a respawn finds the previous set still
+  // registered and every create would collide.
+  await new Promise((resolve) => chrome.contextMenus.removeAll(resolve));
+
+  createMenu({
+    id: MENU_ID,
+    title: 'Save selection to Shelf',
+    contexts: ['selection'],
+  });
+
+  // On the toolbar icon itself. The popup owns the left click, so the shelf needs its
+  // own way in from there.
+  createMenu({
+    id: MENU_OPEN_ID,
+    title: 'Open shelf',
+    contexts: ['action'],
+  });
+
+  log('context menu installed');
 }
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {

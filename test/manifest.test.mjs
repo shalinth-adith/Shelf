@@ -271,3 +271,29 @@ test('onboarding cannot be skipped past the backup screen by a single click', ()
   assert.match(html, /id="confirm-next"[^>]*disabled/, 'continue must start disabled');
   assert.match(html, /id="accept"/, 'an explicit acknowledgement is required');
 });
+
+test('no callback-only chrome API is awaited as a promise', () => {
+  // chrome.contextMenus.create returns the new id SYNCHRONOUSLY and reports failure
+  // through runtime.lastError. Awaiting it awaits a string, so a try/catch around it can
+  // never see the error — which is how "Cannot create item with duplicate id" ended up
+  // in the extension error panel as an Unchecked runtime.lastError rather than being
+  // handled. Only the callback form consumes it.
+  const CALLBACK_ONLY = [
+    'contextMenus.create',
+  ];
+  for (const file of sourceFiles()) {
+    const src = code(file);
+    for (const api of CALLBACK_ONLY) {
+      assert.ok(!src.includes(`await chrome.${api}`),
+        `${file} awaits chrome.${api}, which is not a promise — use the callback form`);
+    }
+  }
+});
+
+test('context menu creation consumes runtime.lastError', () => {
+  const bg = code(join(EXT, 'src', 'background.js'));
+  assert.match(bg, /chrome\.contextMenus\.create\([^)]*,\s*\(\)\s*=>/s,
+    'create() must pass a callback so lastError is read');
+  assert.match(bg, /chrome\.runtime\.lastError/,
+    'the callback must actually read lastError');
+});
