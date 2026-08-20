@@ -16,6 +16,7 @@ import {
   BACKUP_INTERVAL_MS, NAG_AFTER_MS, BACKUP_FILENAME, BACKUP_HTML_FILENAME,
   buildBackupJson, parseBackupJson,
   supportsDirectoryBackup, pickBackupDirectory, hasWriteAccess, writeBackup, downloadJson,
+  looksLikeAFilename,
 } from './backup.js';
 import {
   dayKey, dayHeading, clockTime, relativeTime, relativePhrase, fullTimestamp,
@@ -586,6 +587,14 @@ function where(handle) {
   return handle.kind === 'directory' ? `the "${handle.name}" folder` : `"${handle.name}"`;
 }
 
+/** Nudge, not an error — the backup is working, it is just confusingly placed. */
+function folderNameHint(handle) {
+  return handle && looksLikeAFilename(handle.name)
+    ? ` That folder is named like a file, so you now have ${handle.name}/${BACKUP_FILENAME}.`
+      + ' Harmless, but "Change backup folder" will tidy it.'
+    : '';
+}
+
 async function renderBackupStatus() {
   const handle = await db.getMeta('backupDir');
   const last = (await db.getMeta('lastBackupAt')) ?? 0;
@@ -602,11 +611,13 @@ async function renderBackupStatus() {
       : last
         ? `Backed up ${relativePhrase(last, Date.now())} to ${where(handle)} — `
           + `${BACKUP_FILENAME} to restore, ${BACKUP_HTML_FILENAME} to read.`
+          + folderNameHint(handle)
         : `Backup folder ${where(handle)} is set. Nothing written yet.`;
   } else if (!supportsDirectoryBackup()) {
     status.textContent = 'This browser cannot write to a folder. Download JSON regularly instead.';
   } else {
-    status.textContent = 'No backup folder set. Lose this machine and the clips go with it.';
+    status.textContent = 'No backup folder set — pick any folder and Shelf writes two files into it. '
+      + 'Lose this machine without one and the clips go with it.';
   }
 
   // The escalating warning. PRD §12 rates machine-loss-without-backup High, and the

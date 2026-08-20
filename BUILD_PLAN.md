@@ -25,7 +25,7 @@ that was supposed to catch it being wrong.
 | 5 | `content.js` | ✅ bar renders and saves on medium.com |
 | 6 | `shelf.js` | ✅ 205 clips rendered in 5.4ms (budget 200ms) |
 | 7 | `export.js` | ✅ 1 request from file:// — the document itself |
-| 8 | Backup | ⏳ awaiting acceptance check |
+| 8 | Backup | ✅ both files written and verified on disk |
 | 9 | Popup + onboarding | ⏳ awaiting acceptance check |
 | 10 | Safari conversion | ▶ next — all Chrome steps built |
 

@@ -10,6 +10,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   BACKUP_VERSION, BACKUP_FILENAME, BACKUP_HTML_FILENAME, buildBackupJson, parseBackupJson,
+  looksLikeAFilename,
 } from '../shelf/src/backup.js';
 import { buildExportHtml } from '../shelf/src/export.js';
 
@@ -152,4 +153,17 @@ test('the readable copy carries the whole library, not just marked clips', () =>
   const clips = [clip({ id: 'a', isPublic: false }), clip({ id: 'b', isPublic: true })];
   const html = buildExportHtml(clips, { title: 'Shelf — full archive' });
   assert.match(html, /2 passages/);
+});
+
+test('a folder named like a file is recognised', () => {
+  // "Choose a backup folder" plus a picker offering New Folder is a natural way to end
+  // up with a directory called shelf-backup.json holding a shelf-backup.json. Nothing
+  // breaks, but the result is confusing enough that the user stops trusting it — and a
+  // backup you do not trust is not doing its job.
+  for (const n of ['shelf-backup.json', 'notes.HTML', 'archive.zip', 'x.txt']) {
+    assert.equal(looksLikeAFilename(n), true, n);
+  }
+  for (const n of ['Documents', 'Shelf backups', 'my.clips.folder', '', null]) {
+    assert.equal(looksLikeAFilename(n), false, String(n));
+  }
 });

@@ -75,3 +75,9 @@ kbd {
   background: var(--sheet); border: 1px solid var(--rule); border-bottom-width: 2px;
   border-radius: 5px; padding: 4px 9px; color: var(--ink);
 }
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88em; background: var(--rule-soft);
+  padding: 1px 5px; border-radius: 4px; color: var(--ink);
+}

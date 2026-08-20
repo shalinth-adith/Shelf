@@ -98,6 +98,20 @@ export function parseBackupJson(text) {
  * ================================================================== */
 
 /**
+ * Does this folder name look like someone meant to name a file?
+ *
+ * "Choose a backup folder" plus a picker offering New Folder is a natural way to end up
+ * with a directory called shelf-backup.json containing a shelf-backup.json. Nothing
+ * breaks — but the result is confusing enough that the user will not trust it, and a
+ * backup you do not trust is not doing its job.
+ *
+ * @param {string} name
+ */
+export function looksLikeAFilename(name) {
+  return /\.(json|html|htm|txt|md|zip)$/i.test(String(name || ''));
+}
+
+/**
  * Ask for a folder. Must be called from a user gesture.
  * @returns {Promise<FileSystemDirectoryHandle|null>} null if the picker was dismissed
  */
