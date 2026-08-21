@@ -12,3 +12,4 @@ shelf-safari/
 
 # Packaged store builds
 *.zip
+dist/
